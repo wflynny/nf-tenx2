@@ -1,0 +1,3 @@
+fastqs,sample,library_type
+/home/jdoe/runs/HNGEXSQXXX/outs/fastq_path,example,Gene Expression
+/home/jdoe/runs/HNATACSQXX/outs/fastq_path,example,Chromatin Accessibility

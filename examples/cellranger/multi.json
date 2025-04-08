@@ -1,0 +1,31 @@
+{
+    "gene-expression": {
+        "reference":"/path/to/transcriptome",
+        "probe-set":"/path/to/probe-set.csv",
+        "create-bam":"false #do not generate BAM file",
+        "expect-cells":""
+    },
+    "libraries": [
+        {
+            "fastqs": "",
+            "sample": "",
+            "library_type": ""
+        },
+        {
+            "fastqs": "",
+            "sample": "",
+            "library_type": ""
+        }
+    ],
+    "feature": {
+        "reference": "/path/to/feature_reference.csv"
+    },
+    "samples": [
+       {"sample_id": "", "probe_barcode_ids": "", "description": ""},
+       {"sample_id": "", "probe_barcode_ids": "", "description": ""}
+    ],
+    "pipeline": {
+        "tool_version": "",
+        "dataset_id": ""
+    }
+}

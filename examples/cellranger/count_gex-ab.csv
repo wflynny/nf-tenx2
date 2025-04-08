@@ -1,0 +1,3 @@
+fastqs,sample,library_type,
+/opt/foo/,GEX_sample3,Gene Expression,
+/opt/foo/,Ab_sample3,Antibody Capture,

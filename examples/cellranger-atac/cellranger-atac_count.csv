@@ -1,0 +1,5 @@
+# cellranger-atac only accepts arguments as:
+# cellranger-atac --id=ID --reference=PATH --fastqs=path1,path2 --sample=sample-name
+
+fastqs,sample,library_type
+/home/jdoe/runs/HNATACSQXX/outs/fastq_path,example,Chromatin Accessibility

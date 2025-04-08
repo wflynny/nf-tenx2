@@ -1,0 +1,17 @@
+[gene-expression]
+reference,/path/to/transcriptome
+create-bam,true
+
+[feature]
+reference,/path/to/feature_ref.csv
+
+[libraries]
+fastq_id,fastqs,feature_types
+gex1,/path/to/gex_fastqs,Gene Expression
+ab1,/path/to/ab_fastqs,Antibody Capture
+
+[samples]
+sample_id,hashtag_ids
+Sample1,TotalSeqB_Hashtag_1
+Sample2,TotalSeqB_Hashtag_2
+

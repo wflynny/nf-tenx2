@@ -1,0 +1,22 @@
+[gene-expression]
+reference,/path/to/transcriptome
+create-bam,true
+
+[vdj]
+reference,/path/to/vdj_reference
+
+[feature]
+reference,/path/to/feature_ref.csv
+
+[libraries]
+fastq_id,fastqs,feature_types
+gex1,/path/to/gex_fastqs,Gene Expression
+vdj,/path/to/vdj_fastqs,VDJ
+ab1,/path/to/ab_fastqs,Antibody Capture
+
+[samples]
+sample_id,hashtag_ids
+Sample1,TotalSeqC_Hashtag_1
+Sample2,TotalSeqC_Hashtag_2
+Sample3,TotalSeqC_Hashtag_3
+Sample4,TotalSeqC_Hashtag_4

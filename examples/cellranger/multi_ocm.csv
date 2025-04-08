@@ -1,0 +1,14 @@
+[gene-expression]
+reference,/path/to/transcriptome
+create-bam,false
+
+[libraries]
+fastq_id,fastqs,lanes,feature_types,subsample_rate,
+gex1,/path/to/fastqs,Gene Expression
+
+[samples]
+sample_id,ocm_barcode_ids
+sample1,OB1
+sample2,OB2
+sample3,OB3
+sample4,OB4

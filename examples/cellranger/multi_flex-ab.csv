@@ -1,0 +1,19 @@
+[gene-expression]
+reference,/path/to/transcriptome
+probe-set,/path/to/probe-set.csv  #e.g., cellranger-x.y.z/probe_sets/Chromium_Human_Transcriptome_Probe_Set_v1.0.1_GRCh38-2020-A.csv
+create-bam,false #do not generate BAM file
+
+[libraries]
+fastq_id,fastqs,feature_types
+flex_gex,/path/to/fastqs,Gene Expression
+flex_ab,/path/to/fastqs,Antibody Capture
+
+[feature]
+reference,/path/to/feature_reference.csv
+
+[samples]
+sample_id,probe_barcode_ids,description
+sample1,BC001+AB005
+sample2,BC002+AB006
+sample3,BC003+AB007
+sample4,BC004+AB008

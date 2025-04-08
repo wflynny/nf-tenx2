@@ -1,0 +1,17 @@
+[gene-expression]
+reference,/path/to/transcriptome
+create-bam,true
+
+[vdj]
+reference,/path/to/vdj_reference
+
+[feature]
+reference,/path/to/feature_ref.csv
+
+[libraries]
+fastq_id,fastqs,lanes,feature_types
+GEX_fastqs_id,/path/to/GEX_fastqs,1|2,Gene Expression
+VDJ_B_fastqs_id,/path/to/vdj_B_fastqs,1|2,VDJ-B
+VDJ_T_fastqs_id,/path/to/vdj_T_fastqs,1|2,VDJ-T
+FB_fastqs_id,/path/to/FB_fastqs,1|2,Antibody Capture
+CRISPR_fastqs_id,/path/to/CRISPR_fastqs,1|2,CRISPR Guide Capture

@@ -1,0 +1,18 @@
+[gene-expression]
+reference,/path/to/transcriptome
+create-bam,true
+
+[vdj]
+reference,/path/to/vdj_reference
+
+[feature]
+reference,/path/to/feature_ref.csv
+
+[libraries]
+fastq_id,fastqs,lanes,feature_types
+GEX_fastqs_id,/path/to/GEX1_fastqs,1,Gene Expression
+GEX_fastqs_id,/path/to/GEX2_fastqs,2,Gene Expression
+GEX_fastqs_id,/path/to/GEX3_fastqs,3,Gene Expression
+VDJ_B_fastqs_id,/path/to/vdj_B1_fastqs,1,VDJ-B
+VDJ_B_fastqs_id,/path/to/vdj_B2_fastqs,2,VDJ-B
+VDJ_B_fastqs_id,/path/to/vdj_B3_fastqs,4,VDJ-B

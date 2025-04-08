@@ -1,0 +1,24 @@
+{
+    "gene-expression": {
+        "reference":"/path/to/transcriptome",
+        "probe-set":"/path/to/probe-set.csv",
+        "create-bam":"false #do not generate BAM file",
+        "except-cells":""
+    },
+    "libraries": [
+        {
+            "fastqs": "",
+            "sample": "",
+            "library_type": ""
+        },
+        {
+            "fastqs": "",
+            "sample": "",
+            "library_type": ""
+        }
+    ],
+    "pipeline": {
+        "tool_version": "",
+        "dataset_id": ""
+    }
+}

@@ -18,6 +18,7 @@ process CELLRANGER_COUNT {
         --transcriptome ${record["gene-expression"].reference} \
         --create-bam ${record["gene-expression"]["create-bam"]} \
         --include-introns ${record["gene-expression"]["include-introns"]} \
+        --libraries libraries.csv \
         --localcores ${task.cpus} \
         --localmem ${localmem} \
         --disable-ui

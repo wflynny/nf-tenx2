@@ -31,7 +31,7 @@ workflow MULTI {
     records
     
     main:
-    records | RECORD_TO_JSON_FILE | JSON_TO_MULTI_CSV
+    records | RECORD_TO_JSON_FILE | JSON_TO_MULTI_CSV | CELLRANGER_MULTI
 }
 
 workflow COUNT {
@@ -39,7 +39,7 @@ workflow COUNT {
     records
     
     main:
-    records | RECORD_TO_JSON_FILE | JSON_TO_LIBRARIES_CSV
+    records | RECORD_TO_JSON_FILE | JSON_TO_LIBRARIES_CSV | CELLRANGER_COUNT
 }
 
 workflow GEX {
@@ -61,12 +61,7 @@ workflow GEX {
 
     results_multiqc = FASTQC(records) | MULTIQC(records) | MD5SUM
 
-    results_cellranger = CELLRANGER_MULTI(MULTI(cellranger.multi)).join(
-        CELLRANGER_COUNT(COUNT(cellranger.count)), remainder: true
+    results_cellranger = MULTI(cellranger.multi).join(
+        COUNT(cellranger.count), remainder: true
     ) | MD5SUM
-    
-
-    
-
-
 }

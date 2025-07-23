@@ -1,9 +1,15 @@
 process MULTIQC {
     input:
-        val record
+        tuple val(record), path("*")
     output:
-        val record
-    script:
+        path("*")
+    script:    
     """
+    multiqc .
+    """ 
+
+    stub:
+    """
+    touch multiqc.html
     """
 }

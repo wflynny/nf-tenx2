@@ -1,5 +1,5 @@
 def collect_input_csvs() {
-    files = []
+    def files = []
     if (params.inputCsvs) {
         files += file(params.inputCsvs)
     }
@@ -13,7 +13,7 @@ def collect_input_csvs() {
 }
 
 def collect_input_json_files() {
-    files = []
+    def files = []
     if (params.inputJsonFiles) {
         files += file(params.inputJsonFiles)
     }

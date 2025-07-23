@@ -1,10 +1,10 @@
 process FASTQC {
     input:
-        val record
+        val(record)
     output:
-        val record
+        val(record)
     script:
-    def files = record.fastqs.join(" ")
+    def files = record.libraries.fastqs.join(" ")
     """
     fastqc --threads $task.cpus --quiet --outdir . $files
     """ 

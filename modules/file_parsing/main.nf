@@ -36,9 +36,10 @@ process RECORD_TO_JSON_FILE {
         tuple(val(record), file("rec.json"))
     
     exec:
-    def jsonString = record.toJson()
-    def jsonFile = new File("rec.json")
-    jsonFile.text = jsonString
+    def jsonString = groovy.json.JsonOutput.toJson(record)
+    """
+    echo '${jsonString}' > rec.json
+    """
 }
 
 process JSON_TO_MULTI_CSV {

@@ -16,12 +16,8 @@ include { collect_input_json_files } from "./modules/utils"
 workflow {
     INITIALIZE(params.version)
 
-    records = Channel.from(collect_input_json_files())
-        .map { json_file ->
-            def json_object = new groovy.json.JsonSlurper().parseText(json_file.text)
-            return json_object
-        }
-        .collect()
+    records = channel.fromList(collect_input_json_files())
+        .map { json_file -> new groovy.json.JsonSlurper().parseText(json_file.text) }
 
     if (params.pipeline == null) {
         println("No pipeline supplied!")

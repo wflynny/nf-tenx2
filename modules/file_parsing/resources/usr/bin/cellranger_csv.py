@@ -7,6 +7,9 @@ from io import StringIO
 from configparser import ConfigParser
 
 
+INPUT_TF_TRANSLATION = {"True": True, "False": False, "true": True, "false": False}
+OUTPUT_TF_TRANSLATION = {True: "true", False: "false"}
+
 def _load_json(input_file):
     with open(input_file, "r") as fin:
         return json.load(fin)
@@ -18,7 +21,7 @@ def _load_csv(input_file, section_key="libraries"):
         content = fin.read()
     
     # handle actual csv:
-    if content[0] == "[":
+    if content[0] != "[":
         reader = csv.DictReader(StringIO(content))
         return {section_key: list(reader)}
 
@@ -30,15 +33,22 @@ def _load_csv(input_file, section_key="libraries"):
     cfg.read_string(content)
     for section in cfg.sections():
         buffer = StringIO("\n".join(list(filter(None, cfg[section]))))
-        reader = csv.DictReader(buffer)
+        if section in ("libraries", "samples"):
+            reader = csv.DictReader(buffer)
 
-        #data[section] = list(reader)
-        # need to handle empty entries introduced by trailing commas in csv sections
-        rowdata = []
-        for row in reader:
-            row.pop("", None)
-            rowdata.append(row)
-        data[section] = rowdata
+            rowdata = []
+            for row in reader:
+                row.pop("", None)
+                rowdata.append(row)
+            data[section] = rowdata
+        else:
+            section_data = {}
+            for line in cfg[section]:
+                key, value = line.strip().split(",", 1)
+                value = INPUT_TF_TRANSLATION.get(value, value)
+                section_data[key] = value
+            data[section] = section_data
+
     return data
 
 
@@ -56,29 +66,41 @@ class Config:
             self.config = _load_json(self.input_json)
     
     def dump_json(self, output_file):
+        if not output_file.suffix == ".json":
+            raise Exception(f"Output file [{output_file}] must be a .json file!")
         with open(output_file, "w") as fout:
-            json.dump(self.content, fout)
+            json.dump(self.config, fout)
 
     def dump_multi_csv(self, output_file):
-        cfg = ConfigParser()
-        cfg = ConfigParser(allow_no_value=True)
-        cfg.optionxform = str
-
+        content = []
         for section_name, options in self.config.items():
             if section_name == "pipeline": continue
 
-            cfg.add_section(section_name)
-            for option_name, option_value in options.items():
-                cfg.set(section_name, option_name, option_value)
-        
+            content.append(f"[{section_name}]")
+            if isinstance(options, dict):
+                for option_name, option_value in options.items():
+                    content.append(f"{option_name},{OUTPUT_TF_TRANSLATION.get(option_value, option_value)}")
+
+            elif isinstance(options, list):
+                if len(options) == 0: continue
+                headers = list(options[0].keys())
+                writer = csv.DictWriter(StringIO(), fieldnames=headers)
+                content.append(",".join(writer.fieldnames))
+                for row in options:
+                    row_values = [str(row.get(h, "")) for h in writer.fieldnames]
+                    content.append(",".join(row_values))
+
+            content.append("")
+            
         with open(output_file, "w") as fout:
-            cfg.write(fout)
+            fout.write("\n".join(content))
 
     def dump_unsectioned_csv(self, output_file, section_key="libraries"):
         content = self.config[section_key]
         with open(output_file, "w") as fout:
             headers = list(content[0].keys())
             writer = csv.DictWriter(fout, fieldnames=headers)
+            writer.writeheader()
             writer.writerows(content)
 
 if __name__ == "__main__":
@@ -92,10 +114,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     input_csv, input_json = None, None
-    match args.input_file.ext:
-        case "csv":
+    match args.input_file.suffix:
+        case ".csv":
             input_csv = args.input_file
-        case "json":
+        case ".json":
             input_json = args.input_file
         case _:
             raise Exception(f"Input file [{args.input_file}] isn't a csv or json file!")
@@ -110,4 +132,3 @@ if __name__ == "__main__":
             config.dump_unsectioned_csv(args.output_file, args.unsectioned_output_key)
         case "json":
             config.dump_json(args.output_file)
-

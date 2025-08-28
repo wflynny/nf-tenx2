@@ -64,6 +64,11 @@ class Config:
             self.config = _load_csv(self.input_csv, section_key)
         elif self.input_json:
             self.config = _load_json(self.input_json)
+        
+        self.config["pipeline"] = {
+            "tool_name": "cellranger",
+            "tool_version": "1.0.0",
+        }
     
     def dump_json(self, output_file):
         if not output_file.suffix == ".json":

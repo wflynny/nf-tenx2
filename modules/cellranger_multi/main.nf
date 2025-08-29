@@ -1,6 +1,8 @@
 process CELLRANGER_MULTI {
     publishDir { "${params.pubdir}/${record.pipeline.dataset_id}"}
 
+    label 'process_high'
+
     module { "cellranger/${record.pipeline.tool_version}" } 
 
     input:

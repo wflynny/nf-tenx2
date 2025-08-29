@@ -66,6 +66,7 @@ class Config:
             self.config = _load_json(self.input_json)
         
         self.config["pipeline"] = {
+            "dataset_id": "",
             "tool_name": "cellranger",
             "tool_version": "1.0.0",
         }

@@ -35,7 +35,7 @@ process RECORD_TO_JSON_FILE {
     output:
         tuple(val(record), file("rec.json"))
     
-    exec:
+    script:
     def jsonString = groovy.json.JsonOutput.toJson(record)
     """
     echo '${jsonString}' > rec.json

@@ -1,0 +1,11 @@
+{
+    "xenium": {
+        "action": "relabel",
+        "input_path": "/data/xenium/output-XETG00000__slide01__20240101__120000",
+        "panel": "/data/xenium/custom_panel.json"
+    },
+    "pipeline": {
+        "tool_version": "3.0.1",
+        "dataset_id": "TestXenium_Relabel"
+    }
+}

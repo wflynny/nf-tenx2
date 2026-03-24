@@ -1,0 +1,29 @@
+{
+    "gene-expression": {
+        "reference": "/ref/refdata-gex-GRCh38-2024-A",
+        "create-bam": "true"
+    },
+    "vdj": {
+        "reference": "/ref/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0"
+    },
+    "libraries": [
+        {
+            "fastqs": "test/stub-fastqs/gex_sample2",
+            "sample": "gex_sample2",
+            "library_type": "Gene Expression"
+        },
+        {
+            "fastqs": "test/stub-fastqs/vdj_sample1",
+            "sample": "vdj_sample1",
+            "library_type": "VDJ-B"
+        }
+    ],
+    "samples": [
+        {"sample_id": "Donor1", "description": "Control"},
+        {"sample_id": "Donor2", "description": "Treated"}
+    ],
+    "pipeline": {
+        "tool_version": "9.0.1",
+        "dataset_id": "TestGEX_Multi-VDJ"
+    }
+}

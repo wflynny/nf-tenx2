@@ -1,0 +1,21 @@
+{
+    "gene-expression": {
+        "reference": "/ref/refdata-gex-GRCh38-2024-A"
+    },
+    "spatial": {
+        "slide": "V52B13-086",
+        "area": "A1",
+        "image": "/path/to/tissue_image.tif"
+    },
+    "libraries": [
+        {
+            "fastqs": "test/stub-fastqs/visium_sample1",
+            "sample": "visium_sample1",
+            "library_type": "Gene Expression"
+        }
+    ],
+    "pipeline": {
+        "tool_version": "3.1.1",
+        "dataset_id": "TestVisium_Count"
+    }
+}

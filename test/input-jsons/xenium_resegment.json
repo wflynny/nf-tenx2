@@ -1,0 +1,10 @@
+{
+    "xenium": {
+        "action": "resegment",
+        "input_path": "/data/xenium/output-XETG00000__slide01__20240101__120000"
+    },
+    "pipeline": {
+        "tool_version": "3.0.1",
+        "dataset_id": "TestXenium_Reseg"
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "gene-expression": {
+        "reference": "/ref/refdata-gex-GRCh38-2024-A",
+        "create-bam": "false",
+        "include-introns": "true"
+    },
+    "libraries": [
+        {
+            "fastqs": "test/stub-fastqs/gex_sample1",
+            "sample": "gex_sample1",
+            "library_type": "Gene Expression"
+        }
+    ],
+    "pipeline": {
+        "tool_version": "9.0.1",
+        "dataset_id": "TestGEX_Count-Simple"
+    }
+}

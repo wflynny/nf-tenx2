@@ -1,8 +1,7 @@
+
 #!/usr/bin/env nextflow
 
-nextflow.enable.dsl = 2
 nextflow.enable.moduleBinaries = true
-
 
 include { GEX        } from "./workflows/gex"
 include { ATAC       } from "./workflows/atac"
@@ -16,20 +15,27 @@ include { collect_input_json_files } from "./modules/utils"
 workflow {
     INITIALIZE(params.version)
 
-    records = channel.fromList(collect_input_json_files())
-        .map { json_file -> new groovy.json.JsonSlurper().parseText(json_file.text) }
+    records = Channel
+        .fromList(collect_input_json_files())
+        .map { json_file ->
+            new groovy.json.JsonSlurper().parseText(json_file.text)
+        }
 
     if (params.pipeline == null) {
-        println("No pipeline supplied!")
-    } else if (params.pipeline == "gex") {
+        error "No pipeline supplied! Use --pipeline [gex|atac|multiome|visium|xenium]"
+    } else if (params.pipeline == 'gex') {
         GEX(records)
-    } else if (params.pipeline == "atac") {
+    } else if (params.pipeline == 'atac') {
         ATAC(records)
-    } else if (params.pipeline == "multiome") {
+    } else if (params.pipeline == 'multiome') {
         MULTIOME(records)
-    } else if (params.pipeline == "visium") {
+    } else if (params.pipeline == 'visium') {
         VISIUM(records)
-    } 
+    } else if (params.pipeline == 'xenium') {
+        XENIUM(records)
+    } else {
+        error "Unknown pipeline '${params.pipeline}'. Use one of: gex, atac, multiome, visium, xenium"
+    }
 
     COMPLETE()
 }

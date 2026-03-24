@@ -2,7 +2,8 @@ process FASTQC {
     input:
         val(record)
     output:
-        val(record)
+        tuple val(record), path("*.html"), emit: html
+        tuple val(record), path("*.zip"),  emit: zip
     script:
     def files = record.libraries.fastqs.join(" ")
     """
@@ -10,12 +11,11 @@ process FASTQC {
     """ 
 
     stub:
+    def dataset_id = record.pipeline.dataset_id
     """
-    echo ">1" > R1.fastq.gz
-    echo "ACGTACGT" > R1.fastq.gz
-    echo ">1" > R2.fastq.gz
-    echo "ACGTACGT" > R2.fastq.gz
-    touch R1.fastq.gz.html
-    touch R2.fastq.gz.html
+    touch ${dataset_id}_R1_fastqc.html
+    touch ${dataset_id}_R1_fastqc.zip
+    touch ${dataset_id}_R2_fastqc.html
+    touch ${dataset_id}_R2_fastqc.zip
     """
 }

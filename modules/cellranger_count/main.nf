@@ -1,42 +1,68 @@
-process CELLRANGER_COUNT {
-    publishDir { "${params.pubdir}/${record.pipeline.dataset_id}"}
+include { strip_comment; record_get } from "../utils"
 
-    module { "cellranger/${record.pipeline.tool_version}" } 
+process CELLRANGER_COUNT {
+    publishDir "${params.pubdir}/${record.pipeline.dataset_id}", mode: 'copy'
+
+    label 'process_high'
+
+    module { "cellranger/${record.pipeline.tool_version}" }
 
     input:
         tuple val(record), path("libraries.csv")
+
     output:
-        tuple val(record), path("cellranger/*"), emit: results
-        tuple val(record), path("cellranger/*summary*.json"), path("cellranger/*summary*.csv"), emit: metrics
-    
+        tuple val(record), path("cellranger/**"),                    emit: results
+        tuple val(record), path("cellranger/metrics_summary.csv"),   emit: metrics
+
     script:
-    def localmem = Math.round(task.memory.toGiga() * 0.95)
+    def localmem       = Math.round(task.memory.toGiga() * 0.95)
+    def dataset_id     = record.pipeline.dataset_id
+    def reference      = record["gene-expression"].reference
+    def create_bam     = strip_comment(record_get(record, "gene-expression", "create-bam", params.defaultCreateBam))
+    def include_introns = strip_comment(record_get(record, "gene-expression", "include-introns", params.defaultIncludeIntrons))
     """
-    outdir=${record.pipeline.dataset_id}
-    cellranger count \
-        --id \${outdir} \
-        --transcriptome ${record["gene-expression"].reference} \
-        --create-bam ${record["gene-expression"]["create-bam"]} \
-        --include-introns ${record["gene-expression"]["include-introns"]} \
-        --libraries libraries.csv \
-        --localcores ${task.cpus} \
-        --localmem ${localmem} \
+    cellranger count \\
+        --id ${dataset_id} \\
+        --transcriptome ${reference} \\
+        --create-bam ${create_bam} \\
+        --include-introns ${include_introns} \\
+        --libraries libraries.csv \\
+        --localcores ${task.cpus} \\
+        --localmem ${localmem} \\
         --disable-ui
 
     mkdir -p cellranger/_files
     mv libraries.csv cellranger/
-    mv \${outdir}/_* cellranger/_files
-    mv \${outdir}/*.tgz cellranger/
-    mv \${outdir}/outs/* cellranger/
+    mv ${dataset_id}/_* cellranger/_files/ || true
+    mv ${dataset_id}/*.tgz cellranger/ || true
+    mv ${dataset_id}/outs/* cellranger/
     """
 
     stub:
+    def dataset_id = record.pipeline.dataset_id
     """
-    outdir=${record.pipeline.dataset_id}
     mkdir -p cellranger/_files
-    mv libraries.csv cellranger
-    touch cellranger/\${outdir}.mri.gz
+    mkdir -p cellranger/filtered_feature_bc_matrix
+    mkdir -p cellranger/raw_feature_bc_matrix
+    mkdir -p cellranger/analysis
+
+    cp libraries.csv cellranger/
+
+    # Minimal realistic output structure
+    touch cellranger/${dataset_id}.mri.tgz
+    touch cellranger/web_summary.html
     touch cellranger/metrics_summary.csv
-    touch cellranger/summary.json
+    touch cellranger/molecule_info.h5
+    touch cellranger/filtered_feature_bc_matrix/barcodes.tsv.gz
+    touch cellranger/filtered_feature_bc_matrix/features.tsv.gz
+    touch cellranger/filtered_feature_bc_matrix/matrix.mtx.gz
+    touch cellranger/raw_feature_bc_matrix/barcodes.tsv.gz
+    touch cellranger/raw_feature_bc_matrix/features.tsv.gz
+    touch cellranger/raw_feature_bc_matrix/matrix.mtx.gz
+    touch cellranger/cloupe.cloupe
+
+    echo '{"summary":{}}' > cellranger/summary.json
+    echo 'Estimated Number of Cells,Mean Reads per Cell' > cellranger/metrics_summary.csv
+    echo '5000,50000' >> cellranger/metrics_summary.csv
     """
 }

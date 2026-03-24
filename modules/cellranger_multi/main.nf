@@ -1,45 +1,58 @@
 process CELLRANGER_MULTI {
-    publishDir { "${params.pubdir}/${record.pipeline.dataset_id}"}
+    publishDir "${params.pubdir}/${record.pipeline.dataset_id}", mode: 'copy'
 
     label 'process_high'
 
-    module { "cellranger/${record.pipeline.tool_version}" } 
+    module { "cellranger/${record.pipeline.tool_version}" }
 
     input:
         tuple val(record), path("multi.csv")
+
     output:
-        tuple val(record), path("cellranger-multi/*"), emit: results
-        tuple val(record), 
-            path("cellranger-multi/per_sample_outs/*/*summary*.json"), 
-            path("cellranger-multi/per_sample_outs/*/*summary*.csv"), emit: metrics
-    
+        tuple val(record), path("cellranger-multi/**"),                                      emit: results
+        tuple val(record), path("cellranger-multi/per_sample_outs/*/metrics_summary.csv"),   emit: metrics
+
     script:
-    def localmem = Math.round(task.memory.toGiga() * 0.95)
+    def localmem   = Math.round(task.memory.toGiga() * 0.95)
+    def dataset_id = record.pipeline.dataset_id
     """
-    outdir=${record.pipeline.dataset_id}
-    cellranger multi \
-        --id \${outdir} \
-        --csv multi.csv \
-        --localcores ${task.cpus} \
-        --localmem ${localmem} \
+    cellranger multi \\
+        --id ${dataset_id} \\
+        --csv multi.csv \\
+        --localcores ${task.cpus} \\
+        --localmem ${localmem} \\
         --disable-ui
 
     mkdir -p cellranger-multi/_files
     mv multi.csv cellranger-multi/
-    mv \${outdir}/_* cellranger-multi/_files
-    mv \${outdir}/*.tgz cellranger-multi/
-    mv \${outdir}/outs/* cellranger-multi/
+    mv ${dataset_id}/_* cellranger-multi/_files/ || true
+    mv ${dataset_id}/*.tgz cellranger-multi/ || true
+    mv ${dataset_id}/outs/* cellranger-multi/
     """
 
     stub:
+    def dataset_id = record.pipeline.dataset_id
+    // Create per_sample_outs for each sample in the record
+    def sample_ids = record.containsKey('samples') ? record.samples.collect { it.sample_id ?: 'sample1' } : ['sample1']
+    def mkdir_cmds = sample_ids.collect { sid ->
+        """
+        mkdir -p cellranger-multi/per_sample_outs/${sid}
+        echo 'Estimated Number of Cells,Mean Reads per Cell' > cellranger-multi/per_sample_outs/${sid}/metrics_summary.csv
+        echo '3000,40000' >> cellranger-multi/per_sample_outs/${sid}/metrics_summary.csv
+        touch cellranger-multi/per_sample_outs/${sid}/web_summary.html
+        """
+    }.join('\n')
     """
-    outdir=${record.pipeline.dataset_id}
     mkdir -p cellranger-multi/_files
-    mv multi.csv cellranger-multi/
-    touch cellranger-multi/\${outdir}.mri.tgz
+    mkdir -p cellranger-multi/multi/count/raw_feature_bc_matrix
+    mkdir -p cellranger-multi/multi/count/filtered_feature_bc_matrix
 
-    mkdir -p cellranger-multi/per_sample_outs/1
-    touch cellranger-multi/per_sample_outs/1/metrics_summary.csv
-    touch cellranger-multi/per_sample_outs/1/summary.json
+    cp multi.csv cellranger-multi/
+
+    touch cellranger-multi/${dataset_id}.mri.tgz
+    touch cellranger-multi/multi/count/raw_feature_bc_matrix/barcodes.tsv.gz
+    touch cellranger-multi/multi/count/filtered_feature_bc_matrix/barcodes.tsv.gz
+
+    ${mkdir_cmds}
     """
 }

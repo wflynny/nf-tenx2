@@ -2,8 +2,9 @@ process CELLRANGER_ARC_COUNT {
     publishDir "${params.pubdir}/${record.pipeline.dataset_id}", mode: 'copy'
 
     label 'process_high'
-
-    module { "cellranger-arc/${record.pipeline.tool_version}" }
+ 
+    // no long need closure here as of 25.10
+    module "cellranger-arc/${record.pipeline.tool_version}"
 
     input:
         tuple val(record), path("libraries.csv")

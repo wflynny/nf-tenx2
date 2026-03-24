@@ -3,7 +3,8 @@ process CELLRANGER_ATAC_COUNT {
 
     label 'process_high'
 
-    module { "cellranger-atac/${record.pipeline.tool_version}" }
+    // no long need closure here as of 25.10
+    module "cellranger-atac/${record.pipeline.tool_version}"
 
     input:
         tuple val(record), path("libraries.csv")
@@ -17,8 +18,8 @@ process CELLRANGER_ATAC_COUNT {
     def dataset_id = record.pipeline.dataset_id
     def reference  = record["atac"].reference
     // cellranger-atac count takes --fastqs and --sample directly, not a libraries csv
-    def fastq_dirs = record.libraries.collect { it.fastqs }.unique().join(',')
-    def samples    = record.libraries.collect { it.sample }.unique().join(',')
+    def fastq_dirs = record.libraries.collect { lib -> lib.fastqs }.unique().join(',')
+    def samples    = record.libraries.collect { lib -> lib.sample }.unique().join(',')
     """
     cellranger-atac count \\
         --id ${dataset_id} \\

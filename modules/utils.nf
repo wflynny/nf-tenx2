@@ -7,14 +7,14 @@ def collect_input_json_files() {
     if (params.inputJsonFiles) {
         // handle both single file and list of files
         if (params.inputJsonFiles instanceof List) {
-            params.inputJsonFiles.each { files << file(it) }
+            params.inputJsonFiles.each { f -> files.add(file(f)) }
         } else {
-            files << file(params.inputJsonFiles)
+            files.add(file(params.inputJsonFiles))
         }
     }
 
     if (params.inputDir) {
-        files += file("${params.inputDir}/**.json")
+        file("${params.inputDir}/**.json").each { f -> files.add(f) }
     }
 
     if (files.size() == 0) {
@@ -34,7 +34,7 @@ def extract_fastq_paths(record) {
     if (record.containsKey('libraries') && record.libraries instanceof List) {
         record.libraries.each { lib ->
             if (lib.fastqs) {
-                paths << lib.fastqs
+                paths.add(lib.fastqs)
             }
         }
     }

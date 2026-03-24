@@ -5,7 +5,8 @@ process CELLRANGER_COUNT {
 
     label 'process_high'
 
-    module { "cellranger/${record.pipeline.tool_version}" }
+    // no long need closure here as of 25.10
+    module "cellranger/${record.pipeline.tool_version}"
 
     input:
         tuple val(record), path("libraries.csv")

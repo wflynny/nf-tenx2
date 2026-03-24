@@ -14,13 +14,18 @@ workflow ATAC {
         records
 
     main:
+        // ── Validate ────────────────────────────────────────────────
+        validated = records.map { rec ->
+            RecordValidator.validateAtac(rec)
+            rec
+        }
         // ── cellranger-atac count ───────────────────────────────────
-        atac_json = RECORD_TO_JSON_FILE(records)
+        atac_json = RECORD_TO_JSON_FILE(validated)
         atac_csv  = JSON_TO_LIBRARIES_CSV(atac_json)
         atac_out  = CELLRANGER_ATAC_COUNT(atac_csv)
 
         hashes   = MD5SUM(atac_out.results)
-        metadata = GENERATE_METADATA(
+        GENERATE_METADATA(
             hashes.hashes.join(atac_out.results)
         )
 

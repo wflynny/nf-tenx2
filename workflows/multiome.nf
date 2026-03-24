@@ -14,13 +14,18 @@ workflow MULTIOME {
         records
 
     main:
+        // ── Validate ────────────────────────────────────────────────
+        validated = records.map { rec ->
+            RecordValidator.validateMultiome(rec)
+            rec
+        }
         // ── cellranger-arc count ────────────────────────────────────
-        arc_json = RECORD_TO_JSON_FILE(records)
+        arc_json = RECORD_TO_JSON_FILE(validated)
         arc_csv  = JSON_TO_LIBRARIES_CSV(arc_json)
         arc_out  = CELLRANGER_ARC_COUNT(arc_csv)
 
         hashes   = MD5SUM(arc_out.results)
-        metadata = GENERATE_METADATA(
+        GENERATE_METADATA(
             hashes.hashes.join(arc_out.results)
         )
 

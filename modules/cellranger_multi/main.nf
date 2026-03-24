@@ -3,7 +3,8 @@ process CELLRANGER_MULTI {
 
     label 'process_high'
 
-    module { "cellranger/${record.pipeline.tool_version}" }
+    // no long need closure here as of 25.10
+    module "cellranger/${record.pipeline.tool_version}"
 
     input:
         tuple val(record), path("multi.csv")
@@ -33,7 +34,7 @@ process CELLRANGER_MULTI {
     stub:
     def dataset_id = record.pipeline.dataset_id
     // Create per_sample_outs for each sample in the record
-    def sample_ids = record.containsKey('samples') ? record.samples.collect { it.sample_id ?: 'sample1' } : ['sample1']
+    def sample_ids = record.containsKey('samples') ? record.samples.collect { s -> s.sample_id ?: 'sample1' } : ['sample1']
     def mkdir_cmds = sample_ids.collect { sid ->
         """
         mkdir -p cellranger-multi/per_sample_outs/${sid}

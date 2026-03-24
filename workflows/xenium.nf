@@ -20,23 +20,23 @@ workflow XENIUM {
 
     main:
         records
-            .branch {
-                resegment: it.xenium?.action == 'resegment'
-                relabel:   it.xenium?.action == 'relabel'
+            .branch { rec ->
+                resegment: rec.xenium?.action == 'resegment'
+                relabel:   rec.xenium?.action == 'relabel'
             }
             .set { branched }
 
         // ── resegment path ──────────────────────────────────────────
         reseg_out  = XENIUMRANGER_RESEGMENT(branched.resegment)
         reseg_hash = MD5SUM(reseg_out.results)
-        reseg_meta = GENERATE_METADATA(
+        GENERATE_METADATA(
             reseg_hash.hashes.join(reseg_out.results)
         )
 
         // ── relabel path ────────────────────────────────────────────
         relabel_out  = XENIUMRANGER_RELABEL(branched.relabel)
         relabel_hash = MD5SUM_RELABEL(relabel_out.results)
-        relabel_meta = GENERATE_METADATA_RELABEL(
+        GENERATE_METADATA_RELABEL(
             relabel_hash.hashes.join(relabel_out.results)
         )
 

@@ -34,10 +34,16 @@ workflow GEX {
         records   // channel of parsed JSON record maps
 
     main:
+        // ── Validate Records ──────────────────────────────────
+        validated = records.map { rec ->
+            RecordValidator.validateGex(rec)
+            rec
+        }
+
         // ── Branch: multi vs count ──────────────────────────────────
-        records
-            .branch {
-                multi: is_multi_record(it)
+        validated
+            .branch { rec ->
+                multi: is_multi_record(rec)
                 count: true
             }
             .set { branched }
@@ -48,7 +54,7 @@ workflow GEX {
         count_out  = CELLRANGER_COUNT(count_csv)
 
         count_hashes   = MD5SUM(count_out.results)
-        count_metadata = GENERATE_METADATA(
+        GENERATE_METADATA(
             count_hashes.hashes
                 .join(count_out.results)
         )
@@ -59,7 +65,7 @@ workflow GEX {
         multi_out  = CELLRANGER_MULTI(multi_csv)
 
         multi_hashes   = MD5SUM_MULTI(multi_out.results)
-        multi_metadata = GENERATE_METADATA_MULTI(
+        GENERATE_METADATA_MULTI(
             multi_hashes.hashes
                 .join(multi_out.results)
         )

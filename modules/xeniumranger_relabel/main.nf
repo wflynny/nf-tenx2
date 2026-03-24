@@ -3,7 +3,8 @@ process XENIUMRANGER_RELABEL {
 
     label 'process_high'
 
-    module { "xeniumranger/${record.pipeline.tool_version}" }
+    // no long need closure here as of 25.10
+    module "xeniumranger/${record.pipeline.tool_version}"
 
     input:
         val(record)

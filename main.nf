@@ -1,4 +1,3 @@
-
 #!/usr/bin/env nextflow
 
 nextflow.enable.moduleBinaries = true
@@ -15,7 +14,7 @@ include { collect_input_json_files } from "./modules/utils"
 workflow {
     INITIALIZE(params.version)
 
-    records = Channel
+    records = channel
         .fromList(collect_input_json_files())
         .map { json_file ->
             new groovy.json.JsonSlurper().parseText(json_file.text)

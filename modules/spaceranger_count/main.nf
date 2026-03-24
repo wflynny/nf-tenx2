@@ -3,7 +3,8 @@ process SPACERANGER_COUNT {
 
     label 'process_high'
 
-    module { "spaceranger/${record.pipeline.tool_version}" }
+    // no long need closure here as of 25.10
+    module "spaceranger/${record.pipeline.tool_version}"
 
     input:
         tuple val(record), path("libraries.csv")
@@ -16,8 +17,8 @@ process SPACERANGER_COUNT {
     def localmem   = Math.round(task.memory.toGiga() * 0.95)
     def dataset_id = record.pipeline.dataset_id
     def reference  = record["gene-expression"].reference
-    def fastq_dirs = record.libraries.collect { it.fastqs }.unique().join(',')
-    def samples    = record.libraries.collect { it.sample }.unique().join(',')
+    def fastq_dirs = record.libraries.collect { lib -> lib.fastqs }.unique().join(',')
+    def samples    = record.libraries.collect { lib -> lib.sample }.unique().join(',')
     // spaceranger requires slide/area info
     def slide      = record.containsKey('spatial') ? record.spatial.slide ?: '' : ''
     def area       = record.containsKey('spatial') ? record.spatial.area ?: '' : ''

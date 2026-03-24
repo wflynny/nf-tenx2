@@ -14,13 +14,18 @@ workflow VISIUM {
         records
 
     main:
+        // ── Validate ────────────────────────────────────────────────
+        validated = records.map { rec ->
+            RecordValidator.validateVisium(rec)
+            rec
+        }
         // ── spaceranger count ───────────────────────────────────────
-        sr_json = RECORD_TO_JSON_FILE(records)
+        sr_json = RECORD_TO_JSON_FILE(validated)
         sr_csv  = JSON_TO_LIBRARIES_CSV(sr_json)
         sr_out  = SPACERANGER_COUNT(sr_csv)
 
         hashes   = MD5SUM(sr_out.results)
-        metadata = GENERATE_METADATA(
+        GENERATE_METADATA(
             hashes.hashes.join(sr_out.results)
         )
 

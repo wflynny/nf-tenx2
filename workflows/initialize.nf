@@ -1,13 +1,13 @@
-def print_header(version) {
+def print_header(version, pipeline, inputDir, pubdir) {
     log.info """
     ╔═══════════════════════════════════════╗
     ║           nf-tenx2 v${version}        ║
     ║   10x Genomics Processing Pipeline    ║
     ╚═══════════════════════════════════════╝
 
-    Pipeline  : ${params.pipeline ?: 'not set'}
-    Input dir : ${params.inputDir ?: 'not set'}
-    Output dir: ${params.pubdir}
+    Pipeline  : ${pipeline ?: 'not set'}
+    Input dir : ${inputDir ?: 'not set'}
+    Output dir: ${pubdir}
     Profile   : ${workflow.profile}
     ─────────────────────────────────────────
     """.stripIndent()
@@ -16,15 +16,18 @@ def print_header(version) {
 workflow INITIALIZE {
     take:
         version
+        pipeline
+        inputJsonFiles
+        inputDir
+        pubdir
 
     main:
-        print_header(version)
+        print_header(version, pipeline, inputDir, pubdir)
 
-        // Validate required params
-        if (!params.pipeline) {
+        if (!pipeline) {
             error "Parameter --pipeline is required"
         }
-        if (!params.inputJsonFiles && !params.inputDir) {
+        if (!inputJsonFiles && !inputDir) {
             error "Provide input via --input-json-files or --input-dir"
         }
 }

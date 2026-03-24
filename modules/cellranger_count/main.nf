@@ -1,11 +1,9 @@
 include { strip_comment; record_get } from "../utils"
 
 process CELLRANGER_COUNT {
-    publishDir "${params.pubdir}/${record.pipeline.dataset_id}", mode: 'copy'
 
     label 'process_high'
 
-    // no long need closure here as of 25.10
     module "cellranger/${record.pipeline.tool_version}"
 
     input:
@@ -16,11 +14,11 @@ process CELLRANGER_COUNT {
         tuple val(record), path("cellranger/metrics_summary.csv"),   emit: metrics
 
     script:
-    def localmem       = Math.round(task.memory.toGiga() * 0.95)
-    def dataset_id     = record.pipeline.dataset_id
-    def reference      = record["gene-expression"].reference
-    def create_bam     = strip_comment(record_get(record, "gene-expression", "create-bam", params.defaultCreateBam))
-    def include_introns = strip_comment(record_get(record, "gene-expression", "include-introns", params.defaultIncludeIntrons))
+    def localmem        = Math.round(task.memory.toGiga() * 0.95)
+    def dataset_id      = record.pipeline.dataset_id
+    def reference       = record["gene-expression"].reference
+    def create_bam      = strip_comment(record_get(record, "gene-expression", "create-bam", "false"))
+    def include_introns = strip_comment(record_get(record, "gene-expression", "include-introns", "true"))
     """
     cellranger count \\
         --id ${dataset_id} \\
@@ -49,7 +47,6 @@ process CELLRANGER_COUNT {
 
     cp libraries.csv cellranger/
 
-    # Minimal realistic output structure
     touch cellranger/${dataset_id}.mri.tgz
     touch cellranger/web_summary.html
     touch cellranger/metrics_summary.csv

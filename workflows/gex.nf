@@ -12,7 +12,6 @@
  *   - Flex, Flex + AB
  *   - OCM, OCM + VDJ, OCM + AB
  */
-nextflow.enable.dsl = 2
 
 include { CELLRANGER_MULTI                        } from "../modules/cellranger_multi"
 include { CELLRANGER_COUNT                        } from "../modules/cellranger_count"
@@ -31,10 +30,11 @@ include { is_multi_record; extract_fastq_paths    } from "../modules/utils"
 
 workflow GEX {
     take:
-        records   // channel of parsed JSON record maps
+        records           // channel of parsed JSON record maps
+        pipeline_version  // val: pipeline version string
 
     main:
-        // ── Validate Records ──────────────────────────────────
+        // ── Validate ────────────────────────────────────────────────
         validated = records.map { rec ->
             RecordValidator.validateGex(rec)
             rec
@@ -53,10 +53,10 @@ workflow GEX {
         count_csv  = JSON_TO_LIBRARIES_CSV(count_json)
         count_out  = CELLRANGER_COUNT(count_csv)
 
-        count_hashes   = MD5SUM(count_out.results)
+        count_hashes = MD5SUM(count_out.results)
         GENERATE_METADATA(
-            count_hashes.hashes
-                .join(count_out.results)
+            count_hashes.hashes.join(count_out.results),
+            pipeline_version
         )
 
         // ── cellranger multi path ───────────────────────────────────
@@ -64,35 +64,42 @@ workflow GEX {
         multi_csv  = JSON_TO_MULTI_CSV(multi_json)
         multi_out  = CELLRANGER_MULTI(multi_csv)
 
-        multi_hashes   = MD5SUM_MULTI(multi_out.results)
+        multi_hashes = MD5SUM_MULTI(multi_out.results)
         GENERATE_METADATA_MULTI(
-            multi_hashes.hashes
-                .join(multi_out.results)
+            multi_hashes.hashes.join(multi_out.results),
+            pipeline_version
         )
 
         // ── FASTQC on all records ───────────────────────────────────
-        // Extract FASTQ paths from every record and stage them
-        fastq_ch = records
-            .flatMap { record ->
-                extract_fastq_paths(record).collect { fq_path ->
-                    tuple(record, file(fq_path))
+        // Extract FASTQ paths from every record, keyed by dataset_id for
+        // reliable grouping (avoids map identity issues with groupTuple).
+        fastq_ch = validated
+            .flatMap { rec ->
+                def dataset_id = rec.pipeline.dataset_id
+                extract_fastq_paths(rec).collect { fq_path ->
+                    tuple(dataset_id, rec, file(fq_path))
                 }
             }
-            // Group all fastq dirs per record so FASTQC gets them together
-            .groupTuple()
+            .groupTuple(by: 0)        // group by dataset_id (string, safe equality)
+            .map { dataset_id, recs, fq_dirs ->
+                // After grouping, recs is a list of identical records — take first
+                tuple(recs[0], fq_dirs)
+            }
 
         fastqc_out = FASTQC(fastq_ch)
 
         // ── MultiQC aggregation ─────────────────────────────────────
+        // Collect all FASTQC zip files across all records into one channel
         all_qc = fastqc_out.zip
-            .map { record, zips -> zips }
+            .map { rec, zips -> zips }
             .flatten()
             .collect()
 
         MULTIQC(all_qc)
 
     emit:
-        count_results = count_out.results
-        multi_results = multi_out.results
-        multiqc_html  = MULTIQC.out.html
+        // mix() merges the count and multi result channels so downstream
+        // consumers get all results regardless of which branch ran
+        all_results  = count_out.results.mix(multi_out.results)
+        multiqc_html = MULTIQC.out.html
 }

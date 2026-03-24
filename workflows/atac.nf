@@ -1,5 +1,3 @@
-nextflow.enable.dsl = 2
-
 include { CELLRANGER_ATAC_COUNT               } from "../modules/cellranger-atac_count"
 include { FASTQC                              } from "../modules/fastqc"
 include { MULTIQC                             } from "../modules/multiqc"
@@ -12,42 +10,46 @@ include { extract_fastq_paths                 } from "../modules/utils"
 workflow ATAC {
     take:
         records
+        pipeline_version
 
     main:
-        // ── Validate ────────────────────────────────────────────────
         validated = records.map { rec ->
             RecordValidator.validateAtac(rec)
             rec
         }
-        // ── cellranger-atac count ───────────────────────────────────
+
         atac_json = RECORD_TO_JSON_FILE(validated)
         atac_csv  = JSON_TO_LIBRARIES_CSV(atac_json)
         atac_out  = CELLRANGER_ATAC_COUNT(atac_csv)
 
-        hashes   = MD5SUM(atac_out.results)
+        hashes = MD5SUM(atac_out.results)
         GENERATE_METADATA(
-            hashes.hashes.join(atac_out.results)
+            hashes.hashes.join(atac_out.results),
+            pipeline_version
         )
 
-        // ── FASTQC ─────────────────────────────────────────────────
-        fastq_ch = records
-            .flatMap { record ->
-                extract_fastq_paths(record).collect { fq_path ->
-                    tuple(record, file(fq_path))
+        fastq_ch = validated
+            .flatMap { rec ->
+                def dataset_id = rec.pipeline.dataset_id
+                extract_fastq_paths(rec).collect { fq_path ->
+                    tuple(dataset_id, rec, file(fq_path))
                 }
             }
-            .groupTuple()
+            .groupTuple(by: 0)
+            .map { dataset_id, recs, fq_dirs ->
+                tuple(recs[0], fq_dirs)
+            }
 
         fastqc_out = FASTQC(fastq_ch)
 
         all_qc = fastqc_out.zip
-            .map { record, zips -> zips }
+            .map { rec, zips -> zips }
             .flatten()
             .collect()
 
         MULTIQC(all_qc)
 
     emit:
-        results     = atac_out.results
+        results      = atac_out.results
         multiqc_html = MULTIQC.out.html
 }

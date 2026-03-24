@@ -2,19 +2,18 @@
  * Utility functions for input collection and record manipulation.
  */
 
-def collect_input_json_files() {
+def collect_input_json_files(inputJsonFiles, inputDir) {
     def files = []
-    if (params.inputJsonFiles) {
-        // handle both single file and list of files
-        if (params.inputJsonFiles instanceof List) {
-            params.inputJsonFiles.each { f -> files.add(file(f)) }
+    if (inputJsonFiles) {
+        if (inputJsonFiles instanceof List) {
+            inputJsonFiles.each { f -> files.add(file(f)) }
         } else {
-            files.add(file(params.inputJsonFiles))
+            files.add(file(inputJsonFiles))
         }
     }
 
-    if (params.inputDir) {
-        file("${params.inputDir}/**.json").each { f -> files.add(f) }
+    if (inputDir) {
+        file("${inputDir}/**.json").each { f -> files.add(f) }
     }
 
     if (files.size() == 0) {
@@ -26,7 +25,6 @@ def collect_input_json_files() {
 
 /**
  * Extract all FASTQ directory paths from a parsed JSON record.
- * Works for both 'libraries' (count-style) and sectioned multi-style records.
  * Returns a list of unique path strings.
  */
 def extract_fastq_paths(record) {
@@ -53,12 +51,11 @@ def is_multi_record(record) {
  * Get a safe value from a nested record map, returning a default if the key
  * doesn't exist or is empty.
  */
-def record_get(record, String section, String key, defaultValue) {
+def record_get(record, section, key, defaultValue) {
     if (!record.containsKey(section)) return defaultValue
     def sec = record[section]
     if (sec instanceof Map && sec.containsKey(key)) {
         def val = sec[key]
-        // handle empty strings and comment-appended values
         if (val == null || val.toString().trim() == '') return defaultValue
         return val
     }
@@ -66,7 +63,8 @@ def record_get(record, String section, String key, defaultValue) {
 }
 
 /**
- * Strip inline comments from a record value (e.g. "false #do not generate BAM file" -> "false")
+ * Strip inline comments from a record value
+ * e.g. "false #do not generate BAM file" -> "false"
  */
 def strip_comment(value) {
     if (value == null) return null

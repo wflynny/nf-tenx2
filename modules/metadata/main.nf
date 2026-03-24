@@ -5,10 +5,9 @@
 process GENERATE_METADATA {
     label 'process_single'
 
-    publishDir "${params.pubdir}/${record.pipeline.dataset_id}", mode: 'copy'
-
     input:
         tuple val(record), path("checksums.*"), path(results)
+        val(pipeline_version)
 
     output:
         tuple val(record), path("pipeline-metadata.json"), emit: metadata
@@ -20,7 +19,7 @@ process GENERATE_METADATA {
     {
         "pipeline": {
             "name": "nf-tenx2",
-            "version": "${params.version}",
+            "version": "${pipeline_version}",
             "profile": "${workflow.profile}",
             "nextflow_version": "${nextflow.version}"
         },

@@ -1,9 +1,7 @@
 process XENIUMRANGER_RESEGMENT {
-    publishDir "${params.pubdir}/${record.pipeline.dataset_id}", mode: 'copy'
 
     label 'process_high'
 
-    // no long need closure here as of 25.10
     module "xeniumranger/${record.pipeline.tool_version}"
 
     input:

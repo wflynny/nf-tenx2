@@ -10,7 +10,7 @@ process MD5SUM {
 
     stub:
     """
-    touch hashes.md5
+    echo "d41d8cd98f00b204e9800998ecf8427e stub_file" > hashes.md5
     """
 }
 
@@ -26,7 +26,7 @@ process SHA1SUM {
 
     stub:
     """
-    touch hashes.sha1
+    echo "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  stub_file" > hashes.sha1
     """
 }
 

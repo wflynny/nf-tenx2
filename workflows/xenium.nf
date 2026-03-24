@@ -1,5 +1,3 @@
-nextflow.enable.dsl = 2
-
 include { XENIUMRANGER_RESEGMENT              } from "../modules/xeniumranger_resegment"
 include { XENIUMRANGER_RELABEL                } from "../modules/xeniumranger_relabel"
 include { MD5SUM                              } from "../modules/hash"
@@ -17,27 +15,33 @@ include { GENERATE_METADATA as GENERATE_METADATA_RELABEL } from "../modules/meta
 workflow XENIUM {
     take:
         records
+        pipeline_version
 
     main:
-        records
+        validated = records.map { rec ->
+            RecordValidator.validateXenium(rec)
+            rec
+        }
+
+        validated
             .branch { rec ->
                 resegment: rec.xenium?.action == 'resegment'
                 relabel:   rec.xenium?.action == 'relabel'
             }
             .set { branched }
 
-        // ── resegment path ──────────────────────────────────────────
         reseg_out  = XENIUMRANGER_RESEGMENT(branched.resegment)
         reseg_hash = MD5SUM(reseg_out.results)
         GENERATE_METADATA(
-            reseg_hash.hashes.join(reseg_out.results)
+            reseg_hash.hashes.join(reseg_out.results),
+            pipeline_version
         )
 
-        // ── relabel path ────────────────────────────────────────────
         relabel_out  = XENIUMRANGER_RELABEL(branched.relabel)
         relabel_hash = MD5SUM_RELABEL(relabel_out.results)
         GENERATE_METADATA_RELABEL(
-            relabel_hash.hashes.join(relabel_out.results)
+            relabel_hash.hashes.join(relabel_out.results),
+            pipeline_version
         )
 
     emit:

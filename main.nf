@@ -12,28 +12,32 @@ include { COMPLETE   } from "./workflows/completion"
 include { collect_input_json_files } from "./modules/utils"
 
 workflow {
-    INITIALIZE(params.version)
+    // All params access is confined to this entry workflow
+    def version  = params.version
+    def pipeline = params.pipeline
+
+    INITIALIZE(version, pipeline, params.inputJsonFiles, params.inputDir, params.pubdir)
 
     records = channel
-        .fromList(collect_input_json_files())
+        .fromList(collect_input_json_files(params.inputJsonFiles, params.inputDir))
         .map { json_file ->
             new groovy.json.JsonSlurper().parseText(json_file.text)
         }
 
-    if (params.pipeline == null) {
+    if (pipeline == null) {
         error "No pipeline supplied! Use --pipeline [gex|atac|multiome|visium|xenium]"
-    } else if (params.pipeline == 'gex') {
-        GEX(records)
-    } else if (params.pipeline == 'atac') {
-        ATAC(records)
-    } else if (params.pipeline == 'multiome') {
-        MULTIOME(records)
-    } else if (params.pipeline == 'visium') {
-        VISIUM(records)
-    } else if (params.pipeline == 'xenium') {
-        XENIUM(records)
+    } else if (pipeline == 'gex') {
+        GEX(records, version)
+    } else if (pipeline == 'atac') {
+        ATAC(records, version)
+    } else if (pipeline == 'multiome') {
+        MULTIOME(records, version)
+    } else if (pipeline == 'visium') {
+        VISIUM(records, version)
+    } else if (pipeline == 'xenium') {
+        XENIUM(records, version)
     } else {
-        error "Unknown pipeline '${params.pipeline}'. Use one of: gex, atac, multiome, visium, xenium"
+        error "Unknown pipeline '${pipeline}'. Use one of: gex, atac, multiome, visium, xenium"
     }
 
     COMPLETE()

@@ -1,16 +1,5 @@
 /*
- * GEX workflow — handles all 10x single-cell gene expression assays:
- *
- * cellranger count:
- *   - 3' GEX, 3' GEX + AB, 3' AB only
- *   - 5' GEX, 5' GEX + AB
- *
- * cellranger multi (triggered by presence of 'samples' section):
- *   - 3' GEX + HTO, 3' GEX + HTO + AB
- *   - 5' GEX + VDJ, 5' GEX + VDJ + AB
- *   - 5' GEX + BEAM
- *   - Flex, Flex + AB
- *   - OCM, OCM + VDJ, OCM + AB
+ * GEX workflow — handles all 10x single-cell gene expression assays.
  */
 
 include { CELLRANGER_MULTI                        } from "../modules/cellranger_multi"
@@ -19,6 +8,9 @@ include { FASTQC                                  } from "../modules/fastqc"
 include { MULTIQC                                 } from "../modules/multiqc"
 include { MD5SUM                                  } from "../modules/hash"
 include { MD5SUM as MD5SUM_MULTI                  } from "../modules/hash"
+include { CAPTURE_WORKFLOW                        } from "../modules/metadata"
+include { HASH_INPUTS                             } from "../modules/metadata"
+include { HASH_INPUTS as HASH_INPUTS_MULTI        } from "../modules/metadata"
 include { GENERATE_METADATA                       } from "../modules/metadata"
 include { GENERATE_METADATA as GENERATE_METADATA_MULTI } from "../modules/metadata"
 include { RECORD_TO_JSON_FILE                     } from "../modules/file_parsing"
@@ -30,8 +22,8 @@ include { is_multi_record; extract_fastq_paths    } from "../modules/utils"
 
 workflow GEX {
     take:
-        records           // channel of parsed JSON record maps
-        pipeline_version  // val: pipeline version string
+        records
+        pipeline_version
 
     main:
         // ── Validate ────────────────────────────────────────────────
@@ -39,6 +31,9 @@ workflow GEX {
             RecordValidator.validateGex(rec)
             rec
         }
+
+        // ── Workflow provenance (once per run) ──────────────────────
+        wf_json = CAPTURE_WORKFLOW(pipeline_version)
 
         // ── Branch: multi vs count ──────────────────────────────────
         validated
@@ -48,31 +43,7 @@ workflow GEX {
             }
             .set { branched }
 
-        // ── cellranger count path ───────────────────────────────────
-        count_json = RECORD_TO_JSON_FILE(branched.count)
-        count_csv  = JSON_TO_LIBRARIES_CSV(count_json)
-        count_out  = CELLRANGER_COUNT(count_csv)
-
-        count_hashes = MD5SUM(count_out.results)
-        GENERATE_METADATA(
-            count_hashes.hashes.join(count_out.results),
-            pipeline_version
-        )
-
-        // ── cellranger multi path ───────────────────────────────────
-        multi_json = RECORD_TO_JSON_FILE_MULTI(branched.multi)
-        multi_csv  = JSON_TO_MULTI_CSV(multi_json)
-        multi_out  = CELLRANGER_MULTI(multi_csv)
-
-        multi_hashes = MD5SUM_MULTI(multi_out.results)
-        GENERATE_METADATA_MULTI(
-            multi_hashes.hashes.join(multi_out.results),
-            pipeline_version
-        )
-
         // ── FASTQC on all records ───────────────────────────────────
-        // Extract FASTQ paths from every record, keyed by dataset_id for
-        // reliable grouping (avoids map identity issues with groupTuple).
         fastq_ch = validated
             .flatMap { rec ->
                 def dataset_id = rec.pipeline.dataset_id
@@ -80,26 +51,52 @@ workflow GEX {
                     tuple(dataset_id, rec, file(fq_path))
                 }
             }
-            .groupTuple(by: 0)        // group by dataset_id (string, safe equality)
+            .groupTuple(by: 0)
             .map { dataset_id, recs, fq_dirs ->
-                // After grouping, recs is a list of identical records — take first
                 tuple(recs[0], fq_dirs)
             }
 
         fastqc_out = FASTQC(fastq_ch)
+        MULTIQC(fastqc_out.zip.map { rec, zips -> zips }.flatten().collect())
 
-        // ── MultiQC aggregation ─────────────────────────────────────
-        // Collect all FASTQC zip files across all records into one channel
-        all_qc = fastqc_out.zip
-            .map { rec, zips -> zips }
-            .flatten()
-            .collect()
+        // ── cellranger count ────────────────────────────────────────
+        count_json = RECORD_TO_JSON_FILE(branched.count)
+        count_csv  = JSON_TO_LIBRARIES_CSV(count_json)
+        count_out  = CELLRANGER_COUNT(count_csv)
 
-        MULTIQC(all_qc)
+        count_output_hashes = MD5SUM(count_out.results)
+        count_input_hashes  = HASH_INPUTS(
+            branched.count.map { rec ->
+                tuple(rec, extract_fastq_paths(rec).collect { fq -> file(fq) })
+            }
+        )
+
+        // Assemble: tuple(record, output_checksums, input_checksums, metrics)
+        count_meta_ch = count_output_hashes.hashes  // (record, output_checksums.md5)
+            .join(count_input_hashes.hashes)         // + input_checksums.md5
+            .join(count_out.metrics)                  // + metrics_summary.csv
+
+        GENERATE_METADATA(count_meta_ch, wf_json.json)
+
+        // ── cellranger multi ────────────────────────────────────────
+        multi_json = RECORD_TO_JSON_FILE_MULTI(branched.multi)
+        multi_csv  = JSON_TO_MULTI_CSV(multi_json)
+        multi_out  = CELLRANGER_MULTI(multi_csv)
+
+        multi_output_hashes = MD5SUM_MULTI(multi_out.results)
+        multi_input_hashes  = HASH_INPUTS_MULTI(
+            branched.multi.map { rec ->
+                tuple(rec, extract_fastq_paths(rec).collect { fq -> file(fq) })
+            }
+        )
+
+        multi_meta_ch = multi_output_hashes.hashes
+            .join(multi_input_hashes.hashes)
+            .join(multi_out.metrics)
+
+        GENERATE_METADATA_MULTI(multi_meta_ch, wf_json.json)
 
     emit:
-        // mix() merges the count and multi result channels so downstream
-        // consumers get all results regardless of which branch ran
         all_results  = count_out.results.mix(multi_out.results)
         multiqc_html = MULTIQC.out.html
 }

@@ -1,11 +1,15 @@
 process MD5SUM {
+    label 'process_single'
+
     input:
-        tuple val(record), path(files, stageAs: 'to_hash/*')
+        tuple val(record), path(result_dir)
     output:
         tuple val(record), path("hashes.md5"), emit: hashes
     script:
     """
-    find to_hash/ -type f | sort | xargs md5sum > hashes.md5
+    find ${result_dir} -type f | sort | while read -r f; do
+        md5sum "\$f"
+    done > hashes.md5
     """
 
     stub:
@@ -16,13 +20,15 @@ process MD5SUM {
 
 process SHA1SUM {
     input:
-        tuple val(record), path(files, stageAs: 'to_hash/*')
+        tuple val(record), path(result_dir)
     output:
         tuple val(record), path("hashes.sha1"), emit: hashes
     script:
     """
-    find to_hash/ -type f | sort | xargs sha1sum > hashes.sha1
-    """ 
+    find ${result_dir} -type f | sort | while read -r f; do
+        sha1sum "\$f"
+    done > hashes.sha1
+    """
 
     stub:
     """
@@ -34,14 +40,16 @@ process SHA256SUM {
     label 'process_single'
 
     input:
-        tuple val(record), path(files, stageAs: 'to_hash/*')
+        tuple val(record), path(result_dir)
 
     output:
         tuple val(record), path("hashes.sha256"), emit: hashes
 
     script:
     """
-    find to_hash/ -type f | sort | xargs sha256sum > hashes.sha256
+    find ${result_dir} -type f | sort | while read -r f; do
+        sha256sum "\$f"
+    done > hashes.sha256
     """
 
     stub:

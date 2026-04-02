@@ -1,3 +1,5 @@
+include { calc_localmem } from "../utils"
+
 process XENIUMRANGER_RELABEL {
 
     label 'process_high'
@@ -20,7 +22,7 @@ process XENIUMRANGER_RELABEL {
         --xenium-bundle ${xenium_path} \\
         ${panel ? "--panel ${panel}" : ''} \\
         --localcores ${task.cpus} \\
-        --localmem ${Math.round(task.memory.toGiga() * 0.95)}
+        --localmem ${calc_localmem(task.memory)}
 
     mkdir -p xenium-relabel
     mv ${dataset_id}/outs/* xenium-relabel/

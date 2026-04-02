@@ -70,3 +70,13 @@ def strip_comment(value) {
     if (value == null) return null
     return value.toString().split('#')[0].trim()
 }
+
+/**
+ * Calculate --localmem value for 10x tools from task.memory.
+ * Returns 95% of available memory in GB, with a fallback default
+ * if task.memory is null (e.g. no profile loaded).
+ */
+def calc_localmem(task_memory, fallback_gb = 64) {
+    if (task_memory == null) return fallback_gb
+    return Math.round(task_memory.toGiga() * 0.95)
+}

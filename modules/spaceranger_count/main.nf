@@ -1,3 +1,5 @@
+include { calc_localmem } from "../utils"
+
 process SPACERANGER_COUNT {
 
     label 'process_high'
@@ -12,7 +14,7 @@ process SPACERANGER_COUNT {
         tuple val(record), path("spaceranger/metrics_summary.csv"),   emit: metrics
 
     script:
-    def localmem   = Math.round(task.memory.toGiga() * 0.95)
+    def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
     def reference  = record["gene-expression"].reference
     def fastq_dirs = record.libraries.collect { lib -> lib.fastqs }.unique().join(',')

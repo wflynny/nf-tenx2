@@ -1,3 +1,5 @@
+include { calc_localmem } from "../utils"
+
 process XENIUMRANGER_RESEGMENT {
 
     label 'process_high'
@@ -18,7 +20,7 @@ process XENIUMRANGER_RESEGMENT {
         --id ${dataset_id} \\
         --xenium-bundle ${xenium_path} \\
         --localcores ${task.cpus} \\
-        --localmem ${Math.round(task.memory.toGiga() * 0.95)}
+        --localmem ${calc_localmem(task.memory)}
 
     mkdir -p xenium-reseg
     mv ${dataset_id}/outs/* xenium-reseg/

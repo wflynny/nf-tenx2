@@ -1,3 +1,5 @@
+include { calc_localmem } from "../utils"
+
 process CELLRANGER_MULTI {
 
     label 'process_high'
@@ -12,7 +14,7 @@ process CELLRANGER_MULTI {
         tuple val(record), path("cellranger-multi/per_sample_outs/*/metrics_summary.csv"),   emit: metrics
 
     script:
-    def localmem   = Math.round(task.memory.toGiga() * 0.95)
+    def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
     """
     cellranger multi \\

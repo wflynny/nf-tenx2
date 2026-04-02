@@ -1,4 +1,4 @@
-include { strip_comment; record_get } from "../utils"
+include { strip_comment; record_get; calc_localmem } from "../utils"
 
 process CELLRANGER_COUNT {
 
@@ -14,7 +14,7 @@ process CELLRANGER_COUNT {
         tuple val(record), path("cellranger/metrics_summary.csv"),   emit: metrics
 
     script:
-    def localmem        = Math.round(task.memory.toGiga() * 0.95)
+    def localmem        = calc_localmem(task.memory)
     def dataset_id      = record.pipeline.dataset_id
     def reference       = record["gene-expression"].reference
     def create_bam      = strip_comment(record_get(record, "gene-expression", "create-bam", "false"))

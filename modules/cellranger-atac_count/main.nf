@@ -1,3 +1,5 @@
+include { calc_localmem } from "../utils"
+
 process CELLRANGER_ATAC_COUNT {
 
     label 'process_high'
@@ -12,7 +14,7 @@ process CELLRANGER_ATAC_COUNT {
         tuple val(record), path("cellranger-atac/summary.csv"),           emit: metrics
 
     script:
-    def localmem   = Math.round(task.memory.toGiga() * 0.95)
+    def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
     def reference  = record["atac"].reference
     // cellranger-atac count takes --fastqs and --sample directly, not a libraries csv

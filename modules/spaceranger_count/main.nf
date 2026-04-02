@@ -16,25 +16,9 @@ process SPACERANGER_COUNT {
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def reference  = record["gene-expression"].reference
-    def fastq_dirs = record.libraries.collect { lib -> lib.fastqs }.unique().join(',')
-    def samples    = record.libraries.collect { lib -> lib.sample }.unique().join(',')
-    // spaceranger requires slide/area info
-    def slide      = record.containsKey('spatial') ? record.spatial.slide ?: '' : ''
-    def area       = record.containsKey('spatial') ? record.spatial.area ?: '' : ''
-    def image      = record.containsKey('spatial') ? record.spatial.image ?: '' : ''
+    def cmd        = CommandBuilder.spacerangerCount(record, task.cpus, localmem)
     """
-    spaceranger count \\
-        --id ${dataset_id} \\
-        --transcriptome ${reference} \\
-        --fastqs ${fastq_dirs} \\
-        --sample ${samples} \\
-        ${slide ? "--slide ${slide}" : ''} \\
-        ${area ? "--area ${area}" : ''} \\
-        ${image ? "--image ${image}" : ''} \\
-        --localcores ${task.cpus} \\
-        --localmem ${localmem} \\
-        --disable-ui
+    ${cmd}
 
     mkdir -p spaceranger/_files
     mv ${dataset_id}/_* spaceranger/_files/ || true

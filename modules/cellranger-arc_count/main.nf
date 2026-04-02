@@ -16,15 +16,9 @@ process CELLRANGER_ARC_COUNT {
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def reference  = record["multiome"].reference
+    def cmd        = CommandBuilder.cellrangerArcCount(record, task.cpus, localmem)
     """
-    cellranger-arc count \\
-        --id ${dataset_id} \\
-        --reference ${reference} \\
-        --libraries libraries.csv \\
-        --localcores ${task.cpus} \\
-        --localmem ${localmem} \\
-        --disable-ui
+    ${cmd}
 
     mkdir -p cellranger-arc/_files
     mv libraries.csv cellranger-arc/

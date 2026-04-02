@@ -13,21 +13,17 @@ process XENIUMRANGER_RESEGMENT {
         tuple val(record), path("xenium-reseg/**"), emit: results
 
     script:
-    def dataset_id  = record.pipeline.dataset_id
-    def xenium_path = record.xenium.input_path
+    def localmem  = calc_localmem(task.memory)
+    def datasetId = record.pipeline.dataset_id
+    def cmd       = CommandBuilder.xeniumrangerResegment(record, task.cpus, localmem)
     """
-    xeniumranger resegment \\
-        --id ${dataset_id} \\
-        --xenium-bundle ${xenium_path} \\
-        --localcores ${task.cpus} \\
-        --localmem ${calc_localmem(task.memory)}
+    ${cmd}
 
     mkdir -p xenium-reseg
-    mv ${dataset_id}/outs/* xenium-reseg/
+    mv ${datasetId}/outs/* xenium-reseg/
     """
 
     stub:
-    def dataset_id = record.pipeline.dataset_id
     """
     mkdir -p xenium-reseg
     touch xenium-reseg/cells.zarr.zip

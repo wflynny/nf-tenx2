@@ -13,19 +13,14 @@ process XENIUMRANGER_RELABEL {
         tuple val(record), path("xenium-relabel/**"), emit: results
 
     script:
-    def dataset_id  = record.pipeline.dataset_id
-    def xenium_path = record.xenium.input_path
-    def panel       = record.xenium.panel ?: ''
+    def localmem  = calc_localmem(task.memory)
+    def datasetId = record.pipeline.dataset_id
+    def cmd       = CommandBuilder.xeniumrangerRelabel(record, task.cpus, localmem)
     """
-    xeniumranger relabel \\
-        --id ${dataset_id} \\
-        --xenium-bundle ${xenium_path} \\
-        ${panel ? "--panel ${panel}" : ''} \\
-        --localcores ${task.cpus} \\
-        --localmem ${calc_localmem(task.memory)}
+    ${cmd}
 
     mkdir -p xenium-relabel
-    mv ${dataset_id}/outs/* xenium-relabel/
+    mv ${datasetId}/outs/* xenium-relabel/
     """
 
     stub:

@@ -14,21 +14,11 @@ process CELLRANGER_COUNT {
         tuple val(record), path("cellranger/metrics_summary.csv"),   emit: metrics
 
     script:
-    def localmem        = calc_localmem(task.memory)
-    def dataset_id      = record.pipeline.dataset_id
-    def reference       = record["gene-expression"].reference
-    def create_bam      = strip_comment(record_get(record, "gene-expression", "create-bam", "false"))
-    def include_introns = strip_comment(record_get(record, "gene-expression", "include-introns", "true"))
+    def localmem   = calc_localmem(task.memory)
+    def dataset_id = record.pipeline.dataset_id
+    def cmd        = CommandBuilder.cellrangerCount(record, task.cpus, localmem)
     """
-    cellranger count \\
-        --id ${dataset_id} \\
-        --transcriptome ${reference} \\
-        --create-bam ${create_bam} \\
-        --include-introns ${include_introns} \\
-        --libraries libraries.csv \\
-        --localcores ${task.cpus} \\
-        --localmem ${localmem} \\
-        --disable-ui
+    ${cmd}
 
     mkdir -p cellranger/_files
     mv libraries.csv cellranger/

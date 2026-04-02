@@ -16,19 +16,9 @@ process CELLRANGER_ATAC_COUNT {
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def reference  = record["atac"].reference
-    // cellranger-atac count takes --fastqs and --sample directly, not a libraries csv
-    def fastq_dirs = record.libraries.collect { lib -> lib.fastqs }.unique().join(',')
-    def samples    = record.libraries.collect { lib -> lib.sample }.unique().join(',')
+    def cmd        = CommandBuilder.cellrangerAtacCount(record, task.cpus, localmem)
     """
-    cellranger-atac count \\
-        --id ${dataset_id} \\
-        --reference ${reference} \\
-        --fastqs ${fastq_dirs} \\
-        --sample ${samples} \\
-        --localcores ${task.cpus} \\
-        --localmem ${localmem} \\
-        --disable-ui
+    ${cmd}
 
     mkdir -p cellranger-atac/_files
     mv ${dataset_id}/_* cellranger-atac/_files/ || true

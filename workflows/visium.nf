@@ -25,17 +25,15 @@ workflow VISIUM {
         fastq_ch = validated
             .flatMap { rec ->
                 def dataset_id = rec.pipeline.dataset_id
-                extract_fastq_paths(rec).collect { fq_path ->
-                    tuple(dataset_id, rec, file(fq_path))
+                extract_fastq_paths(rec).collectMany { fq_dir ->
+                    file("${fq_dir}/**/*.fastq.gz").collect { fq_file ->
+                        tuple([dataset_id: dataset_id], fq_file)
+                    }
                 }
-            }
-            .groupTuple(by: 0)
-            .map { dataset_id, recs, fq_dirs ->
-                tuple(recs[0], fq_dirs)
             }
 
         fastqc_out = FASTQC(fastq_ch)
-        MULTIQC(fastqc_out.zip.map { rec, zips -> zips }.flatten().collect())
+        MULTIQC(fastqc_out.zip.map { meta, zip -> zip }.collect())
 
         tool_json = RECORD_TO_JSON_FILE(validated)
         tool_csv  = JSON_TO_LIBRARIES_CSV(tool_json)

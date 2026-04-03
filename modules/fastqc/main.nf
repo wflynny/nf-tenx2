@@ -1,47 +1,31 @@
 /*
- * Run FastQC on staged FASTQ files.
+ * Run Falco (FastQC-compatible) on individual FASTQ files.
  *
- * Input: tuple of (record, list_of_fastq_directory_paths)
- * After groupTuple, the second element may be a list of paths.
- * stageAs: 'fastqs/*' handles both single and multiple directories.
+ * Falco is a C++ drop-in replacement for FastQC that is ~3x faster.
+ * Its output is recognized by MultiQC's fastqc module.
  *
- * Note: The staged directories are symlinks to the original FASTQ locations
- * on the shared filesystem. Singularity autoMounts must be enabled for the
- * container to traverse these symlinks.
+ * This process runs per-FASTQ-file for maximum parallelism on SLURM.
+ * The workflow flatMaps records into individual files before calling this.
  */
 process FASTQC {
-    label 'process_low'
+    label 'process_single'
 
     input:
-        tuple val(record), path(fastq_dirs, stageAs: 'fastqs/*')
+        tuple val(meta), path(fastq)
 
     output:
-        tuple val(record), path("*.html"), emit: html
-        tuple val(record), path("*.zip"),  emit: zip
+        tuple val(meta), path("*_fastqc.html"), emit: html
+        tuple val(meta), path("*_fastqc.zip"),  emit: zip
 
     script:
     """
-    # Search recursively — bcl2fastq output has subdirectories
-    FASTQS=\$(find -L fastqs/ -type f \\( -name '*.fastq.gz' -o -name '*.fq.gz' \\) | sort)
-    if [ -z "\$FASTQS" ]; then
-        echo "WARNING: No FASTQ files found in staged directories" >&2
-        echo "  Searched in: fastqs/" >&2
-        ls -laR fastqs/ >&2 || true
-        # Create placeholder outputs so downstream collect() doesn't hang
-        touch no_fastqs_found.html
-        touch no_fastqs_found.zip
-    else
-        echo "Found \$(echo "\$FASTQS" | wc -l) FASTQ files" >&2
-        fastqc --threads ${task.cpus} --quiet --outdir . \$FASTQS
-    fi
+    falco --quiet --outdir . ${fastq}
     """
 
     stub:
-    def dataset_id = record.pipeline.dataset_id
+    def base = fastq.baseName.replaceAll('.fastq.gz$|.fq.gz$', '')
     """
-    touch ${dataset_id}_R1_fastqc.html
-    touch ${dataset_id}_R1_fastqc.zip
-    touch ${dataset_id}_R2_fastqc.html
-    touch ${dataset_id}_R2_fastqc.zip
+    touch ${base}_fastqc.html
+    touch ${base}_fastqc.zip
     """
 }

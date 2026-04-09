@@ -10,7 +10,7 @@ process CELLRANGER_ATAC_COUNT {
         tuple val(record), path("libraries.csv")
 
     output:
-        tuple val(record), path("cellranger-atac/**"),                    emit: results
+        tuple val(record), path("cellranger-atac"),                       emit: results
         tuple val(record), path("cellranger-atac/summary.csv"),           emit: metrics
 
     script:

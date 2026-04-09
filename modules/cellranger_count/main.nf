@@ -10,7 +10,7 @@ process CELLRANGER_COUNT {
         tuple val(record), path("libraries.csv")
 
     output:
-        tuple val(record), path("cellranger/**"),                    emit: results
+        tuple val(record), path("cellranger"),                       emit: results
         tuple val(record), path("cellranger/metrics_summary.csv"),   emit: metrics
 
     script:

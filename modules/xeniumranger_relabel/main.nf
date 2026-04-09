@@ -10,7 +10,7 @@ process XENIUMRANGER_RELABEL {
         val(record)
 
     output:
-        tuple val(record), path("xenium-relabel/**"), emit: results
+        tuple val(record), path("xenium-relabel"), emit: results
 
     script:
     def localmem  = calc_localmem(task.memory)

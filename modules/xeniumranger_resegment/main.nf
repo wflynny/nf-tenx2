@@ -10,7 +10,7 @@ process XENIUMRANGER_RESEGMENT {
         val(record)
 
     output:
-        tuple val(record), path("xenium-reseg/**"), emit: results
+        tuple val(record), path("xenium-reseg"), emit: results
 
     script:
     def localmem  = calc_localmem(task.memory)

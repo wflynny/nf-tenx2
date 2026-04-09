@@ -10,7 +10,7 @@ process SPACERANGER_COUNT {
         tuple val(record), path("libraries.csv")
 
     output:
-        tuple val(record), path("spaceranger/**"),                    emit: results
+        tuple val(record), path("spaceranger"),                       emit: results
         tuple val(record), path("spaceranger/metrics_summary.csv"),   emit: metrics
 
     script:

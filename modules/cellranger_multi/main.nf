@@ -10,7 +10,7 @@ process CELLRANGER_MULTI {
         tuple val(record), path("multi.csv")
 
     output:
-        tuple val(record), path("cellranger-multi/**"),                                      emit: results
+        tuple val(record), path("cellranger-multi"),                                         emit: results
         tuple val(record), path("cellranger-multi/per_sample_outs/*/metrics_summary.csv"),   emit: metrics
 
     script:

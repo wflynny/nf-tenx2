@@ -15,8 +15,9 @@ workflow {
     // All params access is confined to this entry workflow
     def version  = params.version
     def pipeline = params.pipeline
+    def pubdir   = params.pubdir ?: "${workflow.launchDir}/results_${workflow.runName}"
 
-    INITIALIZE(version, pipeline, params.inputJsonFiles, params.inputDir, params.pubdir)
+    INITIALIZE(version, pipeline, params.inputJsonFiles, params.inputDir, pubdir)
 
     records = channel
         .fromList(collect_input_json_files(params.inputJsonFiles, params.inputDir))

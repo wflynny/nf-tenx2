@@ -53,7 +53,7 @@ workflow GEX {
                 def dataset_id = rec.pipeline.dataset_id
                 def prefixes = extract_sample_prefixes(rec)
                 extract_fastq_paths(rec).collectMany { fq_dir ->
-                    file("${fq_dir}/**/*.fastq.gz")
+                    files("${fq_dir}/**/*.fastq.gz")
                         .findAll { fq_file -> prefixes.any { prefix -> fq_file.name.startsWith(prefix) } }
                         .collect { fq_file -> tuple([dataset_id: dataset_id], fq_file) }
                 }
@@ -69,9 +69,10 @@ workflow GEX {
         // Run-level MultiQC: collect all zips
         MULTIQC(fastqc_out.zip.map { meta, zip -> zip }.collect())
 
-        // ── Stage sample-filtered FASTQs per dataset ────────────────
+        // ── Record context: (record, prefixes, fq_dirs) ─────────────
+        // Built once, reused for STAGE_FASTQS and HASH_INPUTS.
         record_context = validated.map { rec ->
-            tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
+            tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec))
         }
         STAGE_FASTQS(record_context)
 
@@ -83,7 +84,7 @@ workflow GEX {
         count_output_hashes = MD5SUM(count_out.results)
         count_input_hashes  = HASH_INPUTS(
             branched.count.map { rec ->
-                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
+                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec))
             }
         )
 
@@ -102,7 +103,7 @@ workflow GEX {
         multi_output_hashes = MD5SUM_MULTI(multi_out.results)
         multi_input_hashes  = HASH_INPUTS_MULTI(
             branched.multi.map { rec ->
-                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
+                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec))
             }
         )
 

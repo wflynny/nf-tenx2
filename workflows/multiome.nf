@@ -29,7 +29,7 @@ workflow MULTIOME {
                 def dataset_id = rec.pipeline.dataset_id
                 def prefixes = extract_sample_prefixes(rec)
                 extract_fastq_paths(rec).collectMany { fq_dir ->
-                    file("${fq_dir}/**/*.fastq.gz")
+                    files("${fq_dir}/**/*.fastq.gz")
                         .findAll { fq_file -> prefixes.any { prefix -> fq_file.name.startsWith(prefix) } }
                         .collect { fq_file -> tuple([dataset_id: dataset_id], fq_file) }
                 }
@@ -45,9 +45,9 @@ workflow MULTIOME {
         // Run-level MultiQC: collect all zips
         MULTIQC(fastqc_out.zip.map { meta, zip -> zip }.collect())
 
-        // ── Stage sample-filtered FASTQs per dataset ────────────────
+        // ── Record context: (record, prefixes, fq_dirs) ─────────────
         record_context = validated.map { rec ->
-            tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
+            tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec))
         }
         STAGE_FASTQS(record_context)
 
@@ -56,11 +56,7 @@ workflow MULTIOME {
         tool_out  = CELLRANGER_ARC_COUNT(tool_csv)
 
         output_hashes = MD5SUM(tool_out.results)
-        input_hashes  = HASH_INPUTS(
-            validated.map { rec ->
-                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
-            }
-        )
+        input_hashes  = HASH_INPUTS(record_context)
 
         meta_ch = output_hashes.hashes
             .join(input_hashes.hashes)

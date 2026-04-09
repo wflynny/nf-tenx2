@@ -13,7 +13,7 @@ def collect_input_json_files(inputJsonFiles, inputDir) {
     }
 
     if (inputDir) {
-        file("${inputDir}/**.json").each { f -> files.add(f) }
+        files("${inputDir}/**.json").each { f -> files.add(f) }
     }
 
     if (files.size() == 0) {
@@ -25,14 +25,15 @@ def collect_input_json_files(inputJsonFiles, inputDir) {
 
 /**
  * Extract all FASTQ directory paths from a parsed JSON record.
- * Returns a list of unique path strings.
+ * Returns a list of unique Nextflow file objects.
  */
 def extract_fastq_paths(record) {
     def paths = []
-    if (record.containsKey('libraries') && record.libraries instanceof List) {
-        record.libraries.each { lib ->
-            if (lib.fastqs) {
-                paths.add(lib.fastqs)
+    def libs = record?.libraries
+    if (libs instanceof List) {
+        libs.each { lib ->
+            if (lib?.fastqs) {
+                paths.add(file(lib.fastqs))
             }
         }
     }

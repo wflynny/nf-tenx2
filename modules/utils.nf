@@ -40,6 +40,23 @@ def extract_fastq_paths(record) {
 }
 
 /**
+ * Extract unique sample name prefixes from a record's libraries.
+ * These prefixes are used to filter FASTQs to only those belonging to this dataset.
+ * Returns a list of unique sample name strings.
+ */
+def extract_sample_prefixes(record) {
+    def prefixes = []
+    if (record.containsKey('libraries') && record.libraries instanceof List) {
+        record.libraries.each { lib ->
+            if (lib.sample) {
+                prefixes.add(lib.sample)
+            }
+        }
+    }
+    return prefixes.unique()
+}
+
+/**
  * Determine whether a GEX record should use cellranger multi vs cellranger count.
  * Multi is triggered by the presence of a 'samples' section.
  */

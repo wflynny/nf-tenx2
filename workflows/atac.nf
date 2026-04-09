@@ -7,7 +7,8 @@ include { HASH_INPUTS                         } from "../modules/metadata"
 include { GENERATE_METADATA                   } from "../modules/metadata"
 include { RECORD_TO_JSON_FILE                 } from "../modules/file_parsing"
 include { JSON_TO_LIBRARIES_CSV               } from "../modules/file_parsing"
-include { extract_fastq_paths; capture_workflow_json } from "../modules/utils"
+include { STAGE_FASTQS                       } from "../modules/stage_fastqs"
+include { extract_fastq_paths; extract_sample_prefixes; capture_workflow_json } from "../modules/utils"
 
 workflow ATAC {
     take:
@@ -25,15 +26,22 @@ workflow ATAC {
         fastq_ch = validated
             .flatMap { rec ->
                 def dataset_id = rec.pipeline.dataset_id
+                def prefixes = extract_sample_prefixes(rec)
                 extract_fastq_paths(rec).collectMany { fq_dir ->
-                    file("${fq_dir}/**/*.fastq.gz").collect { fq_file ->
-                        tuple([dataset_id: dataset_id], fq_file)
-                    }
+                    file("${fq_dir}/**/*.fastq.gz")
+                        .findAll { fq_file -> prefixes.any { prefix -> fq_file.name.startsWith(prefix) } }
+                        .collect { fq_file -> tuple([dataset_id: dataset_id], fq_file) }
                 }
             }
 
         fastqc_out = FASTQC(fastq_ch)
         MULTIQC(fastqc_out.zip.map { meta, zip -> zip }.collect())
+
+        // ── Stage sample-filtered FASTQs per dataset ────────────────
+        record_context = validated.map { rec ->
+            tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
+        }
+        STAGE_FASTQS(record_context)
 
         tool_json = RECORD_TO_JSON_FILE(validated)
         tool_csv  = JSON_TO_LIBRARIES_CSV(tool_json)

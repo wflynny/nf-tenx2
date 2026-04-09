@@ -19,10 +19,12 @@ workflow {
 
     INITIALIZE(version, pipeline, params.inputJsonFiles, params.inputDir, pubdir)
 
+    // Use JsonSlurperClassic to get thread-safe HashMaps instead of
+    // LazyMap, which causes NPEs under concurrent Nextflow channel access.
     records = channel
         .fromList(collect_input_json_files(params.inputJsonFiles, params.inputDir))
         .map { json_file ->
-            new groovy.json.JsonSlurper().parseText(json_file.text)
+            new groovy.json.JsonSlurperClassic().parseText(json_file.text)
         }
 
     if (pipeline == null) {

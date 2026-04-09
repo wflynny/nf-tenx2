@@ -40,7 +40,9 @@ run_test() {
     rm -rf "${work_dir}" "${RESULTS_DIR}/${test_name}"
     mkdir -p "${work_dir}"
 
-    if nextflow run "${PROJECT_DIR}/main.nf" \
+    if NXF_HOME="${work_dir}/.nxf_home" \
+        NXF_LOG_FILE="${SCRIPT_DIR}/${test_name}.nextflow.log" \
+        nextflow run "${PROJECT_DIR}/main.nf" \
         -profile testing \
         -stub \
         -work-dir "${work_dir}" \

@@ -5,7 +5,7 @@ work/
 test/.nextflow*
 test/work/
 test/results/
-test/*.log
+test/*.log*
 
 # OS
 .DS_Store

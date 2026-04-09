@@ -46,9 +46,10 @@ def extract_fastq_paths(record) {
  */
 def extract_sample_prefixes(record) {
     def prefixes = []
-    if (record.containsKey('libraries') && record.libraries instanceof List) {
-        record.libraries.each { lib ->
-            if (lib.sample) {
+    def libs = record?.libraries
+    if (libs instanceof List) {
+        libs.each { lib ->
+            if (lib?.sample) {
                 prefixes.add(lib.sample)
             }
         }

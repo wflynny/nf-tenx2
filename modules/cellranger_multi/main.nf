@@ -4,7 +4,7 @@ process CELLRANGER_MULTI {
 
     label 'process_high'
 
-    module "cellranger/${record.pipeline.tool_version}"
+    module { task.executor == 'local' ? '' : "cellranger/${record.pipeline.tool_version}" }
 
     input:
         tuple val(record), path("multi.csv")

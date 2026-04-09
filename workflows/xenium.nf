@@ -5,6 +5,7 @@ include { MD5SUM as MD5SUM_RELABEL            } from "../modules/hash"
 include { CAPTURE_WORKFLOW                    } from "../modules/metadata"
 include { GENERATE_METADATA                   } from "../modules/metadata"
 include { GENERATE_METADATA as GENERATE_METADATA_RELABEL } from "../modules/metadata"
+include { capture_workflow_json                           } from "../modules/utils"
 
 workflow XENIUM {
     take:
@@ -17,7 +18,7 @@ workflow XENIUM {
             rec
         }
 
-        wf_json = CAPTURE_WORKFLOW(pipeline_version)
+        wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
         validated
             .branch { rec ->

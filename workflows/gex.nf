@@ -17,7 +17,7 @@ include { RECORD_TO_JSON_FILE                     } from "../modules/file_parsin
 include { RECORD_TO_JSON_FILE as RECORD_TO_JSON_FILE_MULTI } from "../modules/file_parsing"
 include { JSON_TO_MULTI_CSV                       } from "../modules/file_parsing"
 include { JSON_TO_LIBRARIES_CSV                   } from "../modules/file_parsing"
-include { is_multi_record; extract_fastq_paths    } from "../modules/utils"
+include { is_multi_record; extract_fastq_paths; capture_workflow_json } from "../modules/utils"
 
 
 workflow GEX {
@@ -33,7 +33,7 @@ workflow GEX {
         }
 
         // ── Workflow provenance (once per run) ──────────────────────
-        wf_json = CAPTURE_WORKFLOW(pipeline_version)
+        wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
         // ── Branch: multi vs count ──────────────────────────────────
         validated

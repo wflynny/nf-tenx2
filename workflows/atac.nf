@@ -7,7 +7,7 @@ include { HASH_INPUTS                         } from "../modules/metadata"
 include { GENERATE_METADATA                   } from "../modules/metadata"
 include { RECORD_TO_JSON_FILE                 } from "../modules/file_parsing"
 include { JSON_TO_LIBRARIES_CSV               } from "../modules/file_parsing"
-include { extract_fastq_paths                 } from "../modules/utils"
+include { extract_fastq_paths; capture_workflow_json } from "../modules/utils"
 
 workflow ATAC {
     take:
@@ -20,7 +20,7 @@ workflow ATAC {
             rec
         }
 
-        wf_json = CAPTURE_WORKFLOW(pipeline_version)
+        wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
         fastq_ch = validated
             .flatMap { rec ->

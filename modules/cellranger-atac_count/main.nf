@@ -4,7 +4,7 @@ process CELLRANGER_ATAC_COUNT {
 
     label 'process_high'
 
-    module "cellranger-atac/${record.pipeline.tool_version}"
+    module { task.executor == 'local' ? '' : "cellranger-atac/${record.pipeline.tool_version}" }
 
     input:
         tuple val(record), path("libraries.csv")

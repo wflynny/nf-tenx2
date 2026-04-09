@@ -58,29 +58,33 @@ run_test() {
 }
 
 # ── Test definitions ─────────────────────────────────────────────────────────
-declare -A TESTS
-TESTS[gex_count_simple]="gex|${TEST_INPUT_DIR}/gex_count_simple.json"
-TESTS[gex_count_ab]="gex|${TEST_INPUT_DIR}/gex_count_ab.json"
-TESTS[gex_multi_vdj]="gex|${TEST_INPUT_DIR}/gex_multi_vdj.json"
-TESTS[gex_multi_flex]="gex|${TEST_INPUT_DIR}/gex_multi_flex.json"
-TESTS[atac_count]="atac|${TEST_INPUT_DIR}/atac_count.json"
-TESTS[multiome_count]="multiome|${TEST_INPUT_DIR}/multiome_count.json"
-TESTS[visium_count]="visium|${TEST_INPUT_DIR}/visium_count.json"
-TESTS[xenium_resegment]="xenium|${TEST_INPUT_DIR}/xenium_resegment.json"
-TESTS[xenium_relabel]="xenium|${TEST_INPUT_DIR}/xenium_relabel.json"
+# Format: "test_name|pipeline|input_json"
+TESTS="
+atac_count|atac|${TEST_INPUT_DIR}/atac_count.json
+gex_count_ab|gex|${TEST_INPUT_DIR}/gex_count_ab.json
+gex_count_simple|gex|${TEST_INPUT_DIR}/gex_count_simple.json
+gex_multi_flex|gex|${TEST_INPUT_DIR}/gex_multi_flex.json
+gex_multi_vdj|gex|${TEST_INPUT_DIR}/gex_multi_vdj.json
+multiome_count|multiome|${TEST_INPUT_DIR}/multiome_count.json
+visium_count|visium|${TEST_INPUT_DIR}/visium_count.json
+xenium_relabel|xenium|${TEST_INPUT_DIR}/xenium_relabel.json
+xenium_resegment|xenium|${TEST_INPUT_DIR}/xenium_resegment.json
+"
 
 # ── Run tests ────────────────────────────────────────────────────────────────
 FILTER="${1:-}"
 
-for test_name in $(echo "${!TESTS[@]}" | tr ' ' '\n' | sort); do
-    if [[ -n "$FILTER" && "$test_name" != *"$FILTER"* ]]; then
+while IFS='|' read -r test_name pipeline input_json; do
+    [ -z "$test_name" ] && continue
+    if [ -n "$FILTER" ] && echo "$test_name" | grep -qv "$FILTER"; then
         SKIPPED=$((SKIPPED + 1))
         continue
     fi
 
-    IFS='|' read -r pipeline input_json <<< "${TESTS[$test_name]}"
     run_test "$test_name" "$pipeline" "$input_json"
-done
+done <<EOF
+$(echo "$TESTS")
+EOF
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

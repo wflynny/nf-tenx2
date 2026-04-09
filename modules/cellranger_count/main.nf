@@ -4,7 +4,7 @@ process CELLRANGER_COUNT {
 
     label 'process_high'
 
-    module "cellranger/${record.pipeline.tool_version}"
+    module { task.executor == 'local' ? '' : "cellranger/${record.pipeline.tool_version}" }
 
     input:
         tuple val(record), path("libraries.csv")
@@ -39,7 +39,6 @@ process CELLRANGER_COUNT {
 
     touch cellranger/${dataset_id}.mri.tgz
     touch cellranger/web_summary.html
-    touch cellranger/metrics_summary.csv
     touch cellranger/molecule_info.h5
     touch cellranger/filtered_feature_bc_matrix/barcodes.tsv.gz
     touch cellranger/filtered_feature_bc_matrix/features.tsv.gz

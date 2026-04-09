@@ -4,7 +4,7 @@ process SPACERANGER_COUNT {
 
     label 'process_high'
 
-    module "spaceranger/${record.pipeline.tool_version}"
+    module { task.executor == 'local' ? '' : "spaceranger/${record.pipeline.tool_version}" }
 
     input:
         tuple val(record), path("libraries.csv")

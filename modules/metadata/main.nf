@@ -11,30 +11,17 @@ process CAPTURE_WORKFLOW {
     label 'process_single'
 
     input:
-        val(pipeline_version)
+        val(workflow_json_str)
 
     output:
         path("workflow.json"), emit: json
 
-    exec:
-    def wf_info = [
-        pipeline_name:    "nf-tenx2",
-        pipeline_version: pipeline_version,
-        nextflow_version: nextflow.version.toString(),
-        profile:          workflow.profile.toString(),
-        command_line:      workflow.commandLine.toString(),
-        run_name:          workflow.runName.toString(),
-        session_id:        workflow.sessionId.toString(),
-        start:             workflow.start.toString(),
-        script_id:         workflow.scriptId.toString(),
-        work_dir:          workflow.workDir.toString(),
-        launch_dir:        workflow.launchDir.toString(),
-        user_name:         workflow.userName.toString(),
-    ]
-    def json_str = groovy.json.JsonOutput.prettyPrint(
-        groovy.json.JsonOutput.toJson(wf_info)
-    )
-    file("${task.workDir}/workflow.json").text = json_str
+    script:
+    """
+    cat <<- 'HEREDOC' > workflow.json
+    ${workflow_json_str}
+    HEREDOC
+    """
 
     stub:
     """

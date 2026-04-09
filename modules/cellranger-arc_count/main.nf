@@ -4,7 +4,7 @@ process CELLRANGER_ARC_COUNT {
 
     label 'process_high'
 
-    module "cellranger-arc/${record.pipeline.tool_version}"
+    module { task.executor == 'local' ? '' : "cellranger-arc/${record.pipeline.tool_version}" }
 
     input:
         tuple val(record), path("libraries.csv")

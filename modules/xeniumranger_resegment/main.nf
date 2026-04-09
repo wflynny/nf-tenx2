@@ -4,7 +4,7 @@ process XENIUMRANGER_RESEGMENT {
 
     label 'process_high'
 
-    module "xeniumranger/${record.pipeline.tool_version}"
+    module { task.executor == 'local' ? '' : "xeniumranger/${record.pipeline.tool_version}" }
 
     input:
         val(record)

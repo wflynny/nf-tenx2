@@ -58,7 +58,7 @@ workflow VISIUM {
         output_hashes = MD5SUM(tool_out.results)
         input_hashes  = HASH_INPUTS(
             validated.map { rec ->
-                tuple(rec, extract_fastq_paths(rec).collect { fq -> file(fq) })
+                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
             }
         )
 

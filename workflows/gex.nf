@@ -83,7 +83,7 @@ workflow GEX {
         count_output_hashes = MD5SUM(count_out.results)
         count_input_hashes  = HASH_INPUTS(
             branched.count.map { rec ->
-                tuple(rec, extract_fastq_paths(rec).collect { fq -> file(fq) })
+                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
             }
         )
 
@@ -102,7 +102,7 @@ workflow GEX {
         multi_output_hashes = MD5SUM_MULTI(multi_out.results)
         multi_input_hashes  = HASH_INPUTS_MULTI(
             branched.multi.map { rec ->
-                tuple(rec, extract_fastq_paths(rec).collect { fq -> file(fq) })
+                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec).collect { fq -> file(fq) })
             }
         )
 

@@ -18,7 +18,7 @@ include { RECORD_TO_JSON_FILE                     } from "../modules/file_parsin
 include { RECORD_TO_JSON_FILE as RECORD_TO_JSON_FILE_MULTI } from "../modules/file_parsing"
 include { JSON_TO_MULTI_CSV                       } from "../modules/file_parsing"
 include { JSON_TO_LIBRARIES_CSV                   } from "../modules/file_parsing"
-include { STAGE_FASTQS                               } from "../modules/stage_fastqs"
+include { PUBLISH_FASTQS                              } from "../modules/publish_fastqs"
 include { is_multi_record; extract_fastq_paths; extract_sample_prefixes; capture_workflow_json } from "../modules/utils"
 
 
@@ -69,12 +69,8 @@ workflow GEX {
         // Run-level MultiQC: collect all zips
         MULTIQC(fastqc_out.zip.map { meta, zip -> zip }.collect())
 
-        // ── Record context: (record, prefixes, fq_dirs) ─────────────
-        // Built once, reused for STAGE_FASTQS and HASH_INPUTS.
-        record_context = validated.map { rec ->
-            tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec))
-        }
-        STAGE_FASTQS(record_context)
+        // ── Publish sample-filtered FASTQs per dataset ──────────────
+        PUBLISH_FASTQS(fastq_ch.groupTuple())
 
         // ── cellranger count ────────────────────────────────────────
         count_json = RECORD_TO_JSON_FILE(branched.count)

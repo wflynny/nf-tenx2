@@ -8,7 +8,7 @@ include { HASH_INPUTS                         } from "../modules/metadata"
 include { GENERATE_METADATA                   } from "../modules/metadata"
 include { RECORD_TO_JSON_FILE                 } from "../modules/file_parsing"
 include { JSON_TO_LIBRARIES_CSV               } from "../modules/file_parsing"
-include { STAGE_FASTQS                       } from "../modules/stage_fastqs"
+include { PUBLISH_FASTQS                     } from "../modules/publish_fastqs"
 include { extract_fastq_paths; extract_sample_prefixes; capture_workflow_json } from "../modules/utils"
 
 workflow VISIUM {
@@ -45,18 +45,19 @@ workflow VISIUM {
         // Run-level MultiQC: collect all zips
         MULTIQC(fastqc_out.zip.map { meta, zip -> zip }.collect())
 
-        // ── Record context: (record, prefixes, fq_dirs) ─────────────
-        record_context = validated.map { rec ->
-            tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec))
-        }
-        STAGE_FASTQS(record_context)
+        // ── Publish sample-filtered FASTQs per dataset ──────────────
+        PUBLISH_FASTQS(fastq_ch.groupTuple())
 
         tool_json = RECORD_TO_JSON_FILE(validated)
         tool_csv  = JSON_TO_LIBRARIES_CSV(tool_json)
         tool_out  = SPACERANGER_COUNT(tool_csv)
 
         output_hashes = MD5SUM(tool_out.results)
-        input_hashes  = HASH_INPUTS(record_context)
+        input_hashes  = HASH_INPUTS(
+            validated.map { rec ->
+                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec))
+            }
+        )
 
         meta_ch = output_hashes.hashes
             .join(input_hashes.hashes)

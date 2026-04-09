@@ -1,5 +1,6 @@
 include { SPACERANGER_COUNT                             } from "../modules/spaceranger_count"
 include { FASTQC                              } from "../modules/fastqc"
+include { MULTIQC_DATASET                     } from "../modules/multiqc"
 include { MULTIQC                             } from "../modules/multiqc"
 include { MD5SUM                              } from "../modules/hash"
 include { CAPTURE_WORKFLOW                    } from "../modules/metadata"
@@ -35,6 +36,13 @@ workflow VISIUM {
             }
 
         fastqc_out = FASTQC(fastq_ch)
+
+        // Per-dataset MultiQC: group zips by dataset_id
+        dataset_qc = fastqc_out.zip
+            .groupTuple()
+        MULTIQC_DATASET(dataset_qc)
+
+        // Run-level MultiQC: collect all zips
         MULTIQC(fastqc_out.zip.map { meta, zip -> zip }.collect())
 
         // ── Stage sample-filtered FASTQs per dataset ────────────────

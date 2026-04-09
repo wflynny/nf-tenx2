@@ -5,6 +5,7 @@
 include { CELLRANGER_MULTI                        } from "../modules/cellranger_multi"
 include { CELLRANGER_COUNT                        } from "../modules/cellranger_count"
 include { FASTQC                                  } from "../modules/fastqc"
+include { MULTIQC_DATASET                         } from "../modules/multiqc"
 include { MULTIQC                                 } from "../modules/multiqc"
 include { MD5SUM                                  } from "../modules/hash"
 include { MD5SUM as MD5SUM_MULTI                  } from "../modules/hash"
@@ -59,6 +60,13 @@ workflow GEX {
             }
 
         fastqc_out = FASTQC(fastq_ch)
+
+        // Per-dataset MultiQC: group zips by dataset_id
+        dataset_qc = fastqc_out.zip
+            .groupTuple()
+        MULTIQC_DATASET(dataset_qc)
+
+        // Run-level MultiQC: collect all zips
         MULTIQC(fastqc_out.zip.map { meta, zip -> zip }.collect())
 
         // ── Stage sample-filtered FASTQs per dataset ────────────────

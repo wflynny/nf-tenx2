@@ -33,17 +33,14 @@ process HASH_INPUTS {
     label 'process_low'
 
     input:
-        tuple val(record), val(sample_prefixes), path(fastq_dirs, stageAs: 'inputs/*')
+        tuple val(record), path(fastqs)
 
     output:
         tuple val(record), path("input_checksums.md5"), emit: hashes
 
     script:
-    def prefix_pattern = sample_prefixes.collect { "^${it}" }.join('|')
     """
-    find -L inputs/ -name '*.fastq.gz' -o -name '*.fq.gz' | \
-        grep -E '/(${prefix_pattern})' | \
-        sort | xargs md5sum > input_checksums.md5
+    ls -1 *.fastq.gz *.fq.gz 2>/dev/null | sort | xargs md5sum > input_checksums.md5
     touch input_checksums.md5
     """
 

@@ -55,7 +55,11 @@ workflow MULTIOME {
         output_hashes = MD5SUM(tool_out.results)
         input_hashes  = HASH_INPUTS(
             validated.map { rec ->
-                tuple(rec, extract_sample_prefixes(rec), extract_fastq_paths(rec))
+                def prefixes = extract_sample_prefixes(rec)
+                def fqs = extract_fastq_paths(rec).collectMany { d ->
+                    files("${d}/**/*.fastq.gz").findAll { f -> prefixes.any { p -> f.name.startsWith(p) } }
+                }
+                tuple(rec, fqs)
             }
         )
 

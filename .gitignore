@@ -1,4 +1,6 @@
 .nextflow.log*
+.nextflow/*
+pipeline_info/
 work/
 test/.nextflow*
 test/work/

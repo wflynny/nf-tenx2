@@ -11,7 +11,7 @@ process CELLRANGER_MULTI {
 
     output:
         tuple val(record), path("cellranger-multi"),                                         emit: results
-        tuple val(record), path("cellranger-multi/per_sample_outs/*/metrics_summary.csv"),   emit: metrics
+        tuple val(record), path("cellranger-multi/collected_metrics.json"),                   emit: metrics
 
     script:
     def localmem   = calc_localmem(task.memory)
@@ -25,6 +25,11 @@ process CELLRANGER_MULTI {
     mv ${dataset_id}/_* cellranger-multi/_files/ || true
     mv ${dataset_id}/*.tgz cellranger-multi/ || true
     mv ${dataset_id}/outs/* cellranger-multi/
+
+    collect_metrics.py \\
+        --pipestance-dir ${dataset_id} \\
+        --tool-dir cellranger-multi \\
+        --out cellranger-multi/collected_metrics.json
     """
 
     stub:
@@ -50,5 +55,7 @@ process CELLRANGER_MULTI {
     touch cellranger-multi/multi/count/filtered_feature_bc_matrix/barcodes.tsv.gz
 
     ${mkdir_cmds}
+
+    echo '{"per_sample_outs/sample1/metrics_summary.csv":{"Estimated Number of Cells":"3000","Mean Reads per Cell":"40000"}}' > cellranger-multi/collected_metrics.json
     """
 }

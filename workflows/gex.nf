@@ -48,8 +48,8 @@ workflow GEX {
             fqs.collect { fq -> tuple([dataset_id: rec.pipeline.dataset_id], fq) }
         }
         fastqc_out = FASTQC(fastq_ch)
-        MULTIQC_DATASET(fastqc_out.zip.groupTuple())
-        MULTIQC(fastqc_out.zip.map { _meta, zip -> zip }.collect())
+        MULTIQC_DATASET(fastqc_out.results.groupTuple())
+        MULTIQC(fastqc_out.results.map { _meta, qc_dir -> qc_dir }.collect())
 
         // ── Hash inputs (parallel with tools) ───────────────────────
         resolved.fastq

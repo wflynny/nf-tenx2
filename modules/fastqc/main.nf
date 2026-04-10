@@ -2,10 +2,11 @@
  * Run Falco (FastQC-compatible) on individual FASTQ files.
  *
  * Falco is a C++ drop-in replacement for FastQC that is ~3x faster.
- * Its output is recognized by MultiQC's fastqc module.
+ * It produces fastqc_data.txt, fastqc_report.html, and summary.txt
+ * which are recognized by MultiQC's fastqc module.
  *
- * This process runs per-FASTQ-file for maximum parallelism on SLURM.
- * The workflow flatMaps records into individual files before calling this.
+ * Output files are placed in a per-sample subdirectory named
+ * ${base}_fastqc/ to avoid collisions and match MultiQC expectations.
  */
 process FASTQC {
     label 'process_single'
@@ -14,18 +15,21 @@ process FASTQC {
         tuple val(meta), path(fastq)
 
     output:
-        tuple val(meta), path("*_fastqc.html"), emit: html
-        tuple val(meta), path("*_fastqc.zip"),  emit: zip
+        tuple val(meta), path("${base}_fastqc"), emit: results
 
     script:
+    base = fastq.baseName.replaceAll('.fastq.gz$|.fq.gz$', '')
     """
-    falco --quiet --outdir . ${fastq}
+    mkdir -p ${base}_fastqc
+    falco --quiet --outdir ${base}_fastqc ${fastq}
     """
 
     stub:
-    def base = fastq.baseName.replaceAll('.fastq.gz$|.fq.gz$', '')
+    base = fastq.baseName.replaceAll('.fastq.gz$|.fq.gz$', '')
     """
-    touch ${base}_fastqc.html
-    touch ${base}_fastqc.zip
+    mkdir -p ${base}_fastqc
+    touch ${base}_fastqc/fastqc_data.txt
+    touch ${base}_fastqc/fastqc_report.html
+    touch ${base}_fastqc/summary.txt
     """
 }

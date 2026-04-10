@@ -2,7 +2,6 @@
  * Metadata collection for nf-tenx2.
  *
  * CAPTURE_WORKFLOW: serializes Nextflow's workflow object to JSON (once per run)
- * HASH_INPUTS: checksums the input FASTQs for provenance
  * GENERATE_METADATA: collates record, workflow, checksums, and metrics into
  *                    a single pipeline-metadata.json per dataset
  */
@@ -25,33 +24,6 @@ process CAPTURE_WORKFLOW {
     stub:
     """
     echo '{"pipeline_name":"nf-tenx2","pipeline_version":"stub"}' > workflow.json
-    """
-}
-
-process HASH_INPUTS {
-    label 'process_low'
-
-    input:
-        tuple val(record), path(fastqs)
-
-    output:
-        tuple val(record), path("input_checksums.md5"), emit: hashes
-
-    script:
-    """
-    shopt -s nullglob
-    fqs=( *.fastq.gz *.fq.gz )
-    if [ \${#fqs[@]} -gt 0 ]; then
-        printf '%s\\n' "\${fqs[@]}" | sort | xargs md5sum > input_checksums.md5
-    else
-        echo "WARNING: no FASTQ files staged for hashing" >&2
-        touch input_checksums.md5
-    fi
-    """
-
-    stub:
-    """
-    echo "d41d8cd98f00b204e9800998ecf8427e  stub_R1.fastq.gz" > input_checksums.md5
     """
 }
 

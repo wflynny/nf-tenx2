@@ -3,24 +3,24 @@
  */
 
 def collect_input_json_files(inputJsonFiles, inputDir) {
-    def files = []
+    def result = []
     if (inputJsonFiles) {
         if (inputJsonFiles instanceof List) {
-            inputJsonFiles.each { f -> files.add(file(f)) }
+            inputJsonFiles.each { f -> result.add(file(f)) }
         } else {
-            files.add(file(inputJsonFiles))
+            result.add(file(inputJsonFiles))
         }
     }
 
     if (inputDir) {
-        files("${inputDir}/**.json").each { f -> files.add(f) }
+        files("${inputDir}/**.json").each { f -> result.add(f) }
     }
 
-    if (files.size() == 0) {
+    if (result.size() == 0) {
         error "No input JSON files found. Supply --input-json-files or --input-dir"
     }
 
-    return files.unique(false)
+    return result.unique(false)
 }
 
 /**

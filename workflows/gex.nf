@@ -1,9 +1,13 @@
 /*
  * GEX workflow — handles all 10x single-cell gene expression assays.
+ *
+ * Supports optional aggregation: records with a matching `pipeline.aggr_id`
+ * are grouped and fed to cellranger aggr after individual count/multi completes.
  */
 
 include { CELLRANGER_MULTI                        } from "../modules/cellranger_multi"
 include { CELLRANGER_COUNT                        } from "../modules/cellranger_count"
+include { CELLRANGER_AGGR                         } from "../modules/cellranger_aggr"
 include { RESOLVE_FASTQS                          } from "../modules/resolve_fastqs"
 include { FASTQC                                  } from "../modules/fastqc"
 include { MULTIQC_DATASET                         } from "../modules/multiqc"
@@ -12,6 +16,7 @@ include { MD5SUM                                  } from "../modules/hash"
 include { MD5SUM as MD5SUM_MULTI                  } from "../modules/hash"
 include { MD5SUM as MD5SUM_INPUTS                 } from "../modules/hash"
 include { MD5SUM as MD5SUM_INPUTS_MULTI           } from "../modules/hash"
+include { MD5SUM as MD5SUM_AGGR                   } from "../modules/hash"
 include { CAPTURE_WORKFLOW                        } from "../modules/metadata"
 include { GENERATE_METADATA                       } from "../modules/metadata"
 include { GENERATE_METADATA as GENERATE_METADATA_MULTI } from "../modules/metadata"
@@ -38,9 +43,6 @@ workflow GEX {
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
         // ── Resolve FASTQs on compute node ──────────────────────────
-        // Filters FASTQs by sample prefix on a compute node where
-        // filesystem access is guaranteed. Everything that needs
-        // individual files derives from this.
         resolved = RESOLVE_FASTQS(validated)
 
         // ── Falco (FastQC) per file ─────────────────────────────────
@@ -62,8 +64,6 @@ workflow GEX {
         multi_input_hashes = MD5SUM_INPUTS_MULTI(input_hash_branched.multi)
 
         // ── Branch records for tool execution ───────────────────────
-        // Tools only need the record — they find FASTQs from directory
-        // paths in the record themselves.
         validated
             .branch { rec ->
                 multi: is_multi_record(rec)
@@ -93,7 +93,21 @@ workflow GEX {
             .join(multi_out.metrics)
         GENERATE_METADATA_MULTI(multi_meta_ch, wf_json.json)
 
+        // ── cellranger aggr (optional) ──────────────────────────────
+        all_results = count_out.results.mix(multi_out.results)
+
+        aggr_ch = all_results
+            .filter { rec, _dir -> rec.pipeline.containsKey('aggr_id') }
+            .map { rec, dir ->
+                tuple(rec.pipeline.aggr_id, rec.pipeline.tool_version,
+                      rec.pipeline.dataset_id, file("${dir}/molecule_info.h5"))
+            }
+            .groupTuple(by: [0, 1])
+
+        CELLRANGER_AGGR(aggr_ch)
+        MD5SUM_AGGR(CELLRANGER_AGGR.out.results)
+
     emit:
-        all_results  = count_out.results.mix(multi_out.results)
+        all_results  = all_results
         multiqc_html = MULTIQC.out.html
 }

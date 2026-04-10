@@ -243,6 +243,60 @@ class CommandBuilder {
         return cmd.join(' \\\n')
     }
 
+    // ─── cellranger aggr ─────────────────────────────────────────────
+
+    static String cellrangerAggr(String aggrId, int cpus, long localmem) {
+        def cmd = []
+        cmd << "cellranger aggr"
+        cmd << "    --id ${aggrId}"
+        cmd << "    --csv aggr.csv"
+        cmd << "    --localcores ${cpus}"
+        cmd << "    --localmem ${localmem}"
+        cmd << "    --disable-ui"
+        return cmd.join(' \\\n')
+    }
+
+    // ─── cellranger-atac aggr ──────────────────────────────────────
+
+    static String cellrangerAtacAggr(String aggrId, String reference, int cpus, long localmem) {
+        def cmd = []
+        cmd << "cellranger-atac aggr"
+        cmd << "    --id ${aggrId}"
+        cmd << "    --csv aggr.csv"
+        cmd << "    --reference ${reference}"
+        cmd << "    --localcores ${cpus}"
+        cmd << "    --localmem ${localmem}"
+        cmd << "    --disable-ui"
+        return cmd.join(' \\\n')
+    }
+
+    // ─── cellranger-arc aggr ───────────────────────────────────────
+
+    static String cellrangerArcAggr(String aggrId, String reference, int cpus, long localmem) {
+        def cmd = []
+        cmd << "cellranger-arc aggr"
+        cmd << "    --id ${aggrId}"
+        cmd << "    --csv aggr.csv"
+        cmd << "    --reference ${reference}"
+        cmd << "    --localcores ${cpus}"
+        cmd << "    --localmem ${localmem}"
+        cmd << "    --disable-ui"
+        return cmd.join(' \\\n')
+    }
+
+    // ─── spaceranger aggr ──────────────────────────────────────────
+
+    static String spacerangerAggr(String aggrId, int cpus, long localmem) {
+        def cmd = []
+        cmd << "spaceranger aggr"
+        cmd << "    --id ${aggrId}"
+        cmd << "    --csv aggr.csv"
+        cmd << "    --localcores ${cpus}"
+        cmd << "    --localmem ${localmem}"
+        cmd << "    --disable-ui"
+        return cmd.join(' \\\n')
+    }
+
     // ─── xeniumranger resegment ─────────────────────────────────────
 
     static String xeniumrangerResegment(Map record, int cpus, long localmem) {

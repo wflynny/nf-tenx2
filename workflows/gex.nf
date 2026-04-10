@@ -59,6 +59,8 @@ workflow GEX {
                 }
             }
 
+        fastq_ch.view() // Debugging
+
         fastqc_out = FASTQC(fastq_ch)
 
         // Per-dataset MultiQC: group zips by dataset_id

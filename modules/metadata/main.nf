@@ -39,8 +39,14 @@ process HASH_INPUTS {
 
     script:
     """
-    ls -1 *.fastq.gz *.fq.gz 2>/dev/null | sort | xargs md5sum > input_checksums.md5
-    touch input_checksums.md5
+    shopt -s nullglob
+    fqs=( *.fastq.gz *.fq.gz )
+    if [ \${#fqs[@]} -gt 0 ]; then
+        printf '%s\\n' "\${fqs[@]}" | sort | xargs md5sum > input_checksums.md5
+    else
+        echo "WARNING: no FASTQ files staged for hashing" >&2
+        touch input_checksums.md5
+    fi
     """
 
     stub:

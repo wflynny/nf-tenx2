@@ -17,10 +17,9 @@ process CAPTURE_WORKFLOW {
         path("workflow.json"), emit: json
 
     script:
+    def escaped = workflow_json_str.replace("'", "'\\''")
     """
-    cat <<- 'HEREDOC' > workflow.json
-    ${workflow_json_str}
-    HEREDOC
+    printf '%s\\n' '${escaped}' > workflow.json
     """
 
     stub:

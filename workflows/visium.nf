@@ -24,16 +24,19 @@ workflow VISIUM {
 
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
-        fastq_ch = validated
-            .flatMap { rec ->
-                def dataset_id = rec.pipeline.dataset_id
-                def prefixes = extract_sample_prefixes(rec)
-                extract_fastq_paths(rec).collectMany { fq_dir ->
-                    files("${fq_dir}/**/*.fastq.gz")
-                        .findAll { fq_file -> prefixes.any { prefix -> fq_file.name.startsWith(prefix) } }
-                        .collect { fq_file -> tuple([dataset_id: dataset_id], fq_file) }
-                }
+        // ── Filter FASTQs once per record ───────────────────────────
+        record_fastqs = validated.map { rec ->
+            def prefixes = extract_sample_prefixes(rec)
+            def fqs = extract_fastq_paths(rec).collectMany { d ->
+                files("${d}/**/*.fastq.gz").findAll { f -> prefixes.any { p -> f.name.startsWith(p) } }
             }
+            tuple(rec, fqs)
+        }
+
+        // ── Falco (FastQC) on individual FASTQ files ────────────────
+        fastq_ch = record_fastqs.flatMap { rec, fqs ->
+            fqs.collect { fq -> tuple([dataset_id: rec.pipeline.dataset_id], fq) }
+        }
 
         fastqc_out = FASTQC(fastq_ch)
 
@@ -48,20 +51,12 @@ workflow VISIUM {
         // ── Publish sample-filtered FASTQs per dataset ──────────────
         PUBLISH_FASTQS(fastq_ch.groupTuple())
 
-        tool_json = RECORD_TO_JSON_FILE(validated)
+        tool_json = RECORD_TO_JSON_FILE(record_fastqs.map { rec, _fqs -> rec })
         tool_csv  = JSON_TO_LIBRARIES_CSV(tool_json)
         tool_out  = SPACERANGER_COUNT(tool_csv)
 
         output_hashes = MD5SUM(tool_out.results)
-        input_hashes  = HASH_INPUTS(
-            validated.map { rec ->
-                def prefixes = extract_sample_prefixes(rec)
-                def fqs = extract_fastq_paths(rec).collectMany { d ->
-                    files("${d}/**/*.fastq.gz").findAll { f -> prefixes.any { p -> f.name.startsWith(p) } }
-                }
-                tuple(rec, fqs)
-            }
-        )
+        input_hashes  = HASH_INPUTS(record_fastqs)
 
         meta_ch = output_hashes.hashes
             .join(input_hashes.hashes)

@@ -37,29 +37,28 @@ workflow GEX {
         // ── Workflow provenance (once per run) ──────────────────────
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
-        // ── Branch: multi vs count ──────────────────────────────────
-        validated
-            .branch { rec ->
+        // ── Filter FASTQs once per record ───────────────────────────
+        // Single source of truth: tuple(record, [filtered fastq files])
+        record_fastqs = validated.map { rec ->
+            def prefixes = extract_sample_prefixes(rec)
+            def fqs = extract_fastq_paths(rec).collectMany { d ->
+                files("${d}/**/*.fastq.gz").findAll { f -> prefixes.any { p -> f.name.startsWith(p) } }
+            }
+            tuple(rec, fqs)
+        }
+
+        // ── Branch: multi vs count (carries FASTQs along) ──────────
+        record_fastqs
+            .branch { rec, _fqs ->
                 multi: is_multi_record(rec)
                 count: true
             }
             .set { branched }
 
         // ── Falco (FastQC) on individual FASTQ files ────────────────
-        // Expand each record's FASTQ dirs into individual .fastq.gz files,
-        // filtered to only those matching this record's sample prefixes.
-        fastq_ch = validated
-            .flatMap { rec ->
-                def dataset_id = rec.pipeline.dataset_id
-                def prefixes = extract_sample_prefixes(rec)
-                extract_fastq_paths(rec).collectMany { fq_dir ->
-                    files("${fq_dir}/**/*.fastq.gz")
-                        .findAll { fq_file -> prefixes.any { prefix -> fq_file.name.startsWith(prefix) } }
-                        .collect { fq_file -> tuple([dataset_id: dataset_id], fq_file) }
-                }
-            }
-
-        fastq_ch.view() // Debugging
+        fastq_ch = record_fastqs.flatMap { rec, fqs ->
+            fqs.collect { fq -> tuple([dataset_id: rec.pipeline.dataset_id], fq) }
+        }
 
         fastqc_out = FASTQC(fastq_ch)
 
@@ -75,20 +74,12 @@ workflow GEX {
         PUBLISH_FASTQS(fastq_ch.groupTuple())
 
         // ── cellranger count ────────────────────────────────────────
-        count_json = RECORD_TO_JSON_FILE(branched.count)
+        count_json = RECORD_TO_JSON_FILE(branched.count.map { rec, _fqs -> rec })
         count_csv  = JSON_TO_LIBRARIES_CSV(count_json)
         count_out  = CELLRANGER_COUNT(count_csv)
 
         count_output_hashes = MD5SUM(count_out.results)
-        count_input_hashes  = HASH_INPUTS(
-            branched.count.map { rec ->
-                def prefixes = extract_sample_prefixes(rec)
-                def fqs = extract_fastq_paths(rec).collectMany { d ->
-                    files("${d}/**/*.fastq.gz").findAll { f -> prefixes.any { p -> f.name.startsWith(p) } }
-                }
-                tuple(rec, fqs)
-            }
-        )
+        count_input_hashes  = HASH_INPUTS(branched.count)
 
         // Assemble: tuple(record, output_checksums, input_checksums, metrics)
         count_meta_ch = count_output_hashes.hashes  // (record, output_checksums.md5)
@@ -98,20 +89,12 @@ workflow GEX {
         GENERATE_METADATA(count_meta_ch, wf_json.json)
 
         // ── cellranger multi ────────────────────────────────────────
-        multi_json = RECORD_TO_JSON_FILE_MULTI(branched.multi)
+        multi_json = RECORD_TO_JSON_FILE_MULTI(branched.multi.map { rec, _fqs -> rec })
         multi_csv  = JSON_TO_MULTI_CSV(multi_json)
         multi_out  = CELLRANGER_MULTI(multi_csv)
 
         multi_output_hashes = MD5SUM_MULTI(multi_out.results)
-        multi_input_hashes  = HASH_INPUTS_MULTI(
-            branched.multi.map { rec ->
-                def prefixes = extract_sample_prefixes(rec)
-                def fqs = extract_fastq_paths(rec).collectMany { d ->
-                    files("${d}/**/*.fastq.gz").findAll { f -> prefixes.any { p -> f.name.startsWith(p) } }
-                }
-                tuple(rec, fqs)
-            }
-        )
+        multi_input_hashes  = HASH_INPUTS_MULTI(branched.multi)
 
         multi_meta_ch = multi_output_hashes.hashes
             .join(multi_input_hashes.hashes)

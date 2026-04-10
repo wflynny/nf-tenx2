@@ -44,7 +44,7 @@ workflow GEX {
         resolved = RESOLVE_FASTQS(validated)
 
         // ── Falco (FastQC) per file ─────────────────────────────────
-        fastq_ch = resolved.fastqs.flatMap { rec, fqs ->
+        fastq_ch = resolved.fastq.flatMap { rec, fqs ->
             fqs.collect { fq -> tuple([dataset_id: rec.pipeline.dataset_id], fq) }
         }
         fastqc_out = FASTQC(fastq_ch)
@@ -52,7 +52,7 @@ workflow GEX {
         MULTIQC(fastqc_out.zip.map { _meta, zip -> zip }.collect())
 
         // ── Hash inputs (parallel with tools) ───────────────────────
-        resolved.fastqs
+        resolved.fastq
             .branch { rec, _fqs ->
                 multi: is_multi_record(rec)
                 count: true

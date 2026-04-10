@@ -21,7 +21,7 @@ process RESOLVE_FASTQS {
         val(record)
 
     output:
-        tuple val(record), path("fastqs/*.fastq.gz"), emit: fastqs
+        tuple val(record), path("fastq/*.fastq.gz"), emit: fastq
 
     script:
     def dirs = record.libraries.collect { lib -> lib.fastqs }.unique()
@@ -29,11 +29,11 @@ process RESOLVE_FASTQS {
     def grep_args = prefixes.collect { p -> "-e '^${p}'" }.join(' ')
     def dir_list = dirs.collect { d -> "'${d}'" }.join(' ')
     """
-    mkdir -p fastqs
+    mkdir -p fastq
     find -L ${dir_list} -name '*.fastq.gz' | while read -r fq; do
         fname=\$(basename "\$fq")
         if echo "\$fname" | grep -q ${grep_args}; then
-            ln -s "\$(readlink -f "\$fq")" "fastqs/\$fname"
+            ln -s "\$(readlink -f "\$fq")" "fastq/\$fname"
         fi
     done
     """
@@ -41,7 +41,7 @@ process RESOLVE_FASTQS {
     stub:
     def prefixes = record.libraries.collect { lib -> lib.fastq_id ?: lib.sample }.unique()
     """
-    mkdir -p fastqs
-    ${prefixes.collect { p -> "touch fastqs/${p}_S1_L001_R1_001.fastq.gz\n    touch fastqs/${p}_S1_L001_R2_001.fastq.gz" }.join('\n    ')}
+    mkdir -p fastq
+    ${prefixes.collect { p -> "touch fastq/${p}_S1_L001_R1_001.fastq.gz\n    touch fastq/${p}_S1_L001_R2_001.fastq.gz" }.join('\n    ')}
     """
 }

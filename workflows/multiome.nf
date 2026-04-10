@@ -28,7 +28,7 @@ workflow MULTIOME {
         resolved = RESOLVE_FASTQS(validated)
 
         // ── Falco (FastQC) per file ─────────────────────────────────
-        fastq_ch = resolved.fastqs.flatMap { rec, fqs ->
+        fastq_ch = resolved.fastq.flatMap { rec, fqs ->
             fqs.collect { fq -> tuple([dataset_id: rec.pipeline.dataset_id], fq) }
         }
         fastqc_out = FASTQC(fastq_ch)
@@ -36,7 +36,7 @@ workflow MULTIOME {
         MULTIQC(fastqc_out.zip.map { _meta, zip -> zip }.collect())
 
         // ── Hash inputs (parallel with tool) ────────────────────────
-        input_hashes = MD5SUM_INPUTS(resolved.fastqs)
+        input_hashes = MD5SUM_INPUTS(resolved.fastq)
 
         // ── Tool execution (uses record directly) ───────────────────
         tool_json = RECORD_TO_JSON_FILE(validated)

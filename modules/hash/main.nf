@@ -7,7 +7,7 @@ process MD5SUM {
         tuple val(record), path("hashes.md5"), emit: hashes
     script:
     """
-    find -L ${result_dir} -type f | sort | while read -r f; do
+    find -L ${result_dir} -type f -not -name '.*' | sort | while read -r f; do
         md5sum "\$f"
     done > hashes.md5
     """

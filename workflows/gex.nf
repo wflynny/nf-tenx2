@@ -4,6 +4,7 @@
 
 include { CELLRANGER_MULTI                        } from "../modules/cellranger_multi"
 include { CELLRANGER_COUNT                        } from "../modules/cellranger_count"
+include { RESOLVE_FASTQS                          } from "../modules/resolve_fastqs"
 include { FASTQC                                  } from "../modules/fastqc"
 include { MULTIQC_DATASET                         } from "../modules/multiqc"
 include { MULTIQC                                 } from "../modules/multiqc"
@@ -18,8 +19,7 @@ include { RECORD_TO_JSON_FILE                     } from "../modules/file_parsin
 include { RECORD_TO_JSON_FILE as RECORD_TO_JSON_FILE_MULTI } from "../modules/file_parsing"
 include { JSON_TO_MULTI_CSV                       } from "../modules/file_parsing"
 include { JSON_TO_LIBRARIES_CSV                   } from "../modules/file_parsing"
-include { PUBLISH_FASTQS                          } from "../modules/publish_fastqs"
-include { is_multi_record; extract_fastq_paths; extract_sample_prefixes; capture_workflow_json } from "../modules/utils"
+include { is_multi_record; capture_workflow_json   } from "../modules/utils"
 
 
 workflow GEX {
@@ -37,39 +37,22 @@ workflow GEX {
         // ── Workflow provenance (once per run) ──────────────────────
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
-        // ── Branch records for tool execution ───────────────────────
-        // Tools only need the record (they find FASTQs from directory paths).
-        validated
-            .branch { rec ->
-                multi: is_multi_record(rec)
-                count: true
-            }
-            .set { branched }
-
-        // ── Filter FASTQs once per record ───────────────────────────
-        // Single source of truth for sample-filtered FASTQ files.
-        // Everything that needs individual files derives from this.
-        record_fastqs = validated.map { rec ->
-            def prefixes = extract_sample_prefixes(rec)
-            def fqs = extract_fastq_paths(rec).collectMany { d ->
-                files("${d}/**/*.fastq.gz").findAll { f -> prefixes.any { p -> f.name.startsWith(p) } }
-            }
-            tuple(rec, fqs)
-        }
+        // ── Resolve FASTQs on compute node ──────────────────────────
+        // Filters FASTQs by sample prefix on a compute node where
+        // filesystem access is guaranteed. Everything that needs
+        // individual files derives from this.
+        resolved = RESOLVE_FASTQS(validated)
 
         // ── Falco (FastQC) per file ─────────────────────────────────
-        fastq_ch = record_fastqs.flatMap { rec, fqs ->
+        fastq_ch = resolved.fastqs.flatMap { rec, fqs ->
             fqs.collect { fq -> tuple([dataset_id: rec.pipeline.dataset_id], fq) }
         }
         fastqc_out = FASTQC(fastq_ch)
         MULTIQC_DATASET(fastqc_out.zip.groupTuple())
         MULTIQC(fastqc_out.zip.map { _meta, zip -> zip }.collect())
 
-        // ── Publish sample-filtered FASTQs ──────────────────────────
-        PUBLISH_FASTQS(fastq_ch.groupTuple())
-
-        // ── Hash inputs (runs in parallel with tools and FASTQC) ────
-        record_fastqs
+        // ── Hash inputs (parallel with tools) ───────────────────────
+        resolved.fastqs
             .branch { rec, _fqs ->
                 multi: is_multi_record(rec)
                 count: true
@@ -77,6 +60,16 @@ workflow GEX {
             .set { input_hash_branched }
         count_input_hashes = MD5SUM_INPUTS(input_hash_branched.count)
         multi_input_hashes = MD5SUM_INPUTS_MULTI(input_hash_branched.multi)
+
+        // ── Branch records for tool execution ───────────────────────
+        // Tools only need the record — they find FASTQs from directory
+        // paths in the record themselves.
+        validated
+            .branch { rec ->
+                multi: is_multi_record(rec)
+                count: true
+            }
+            .set { branched }
 
         // ── cellranger count ────────────────────────────────────────
         count_json = RECORD_TO_JSON_FILE(branched.count)

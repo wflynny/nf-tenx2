@@ -40,6 +40,11 @@ run_test() {
     rm -rf "${work_dir}" "${RESULTS_DIR}/${test_name}"
     mkdir -p "${work_dir}"
 
+    local input_flag="--inputJsonFiles"
+    if [ -d "${input_json}" ]; then
+        input_flag="--inputDir"
+    fi
+
     if NXF_HOME="${work_dir}/.nxf_home" \
         NXF_LOG_FILE="${SCRIPT_DIR}/${test_name}.nextflow.log" \
         nextflow run "${PROJECT_DIR}/main.nf" \
@@ -47,7 +52,7 @@ run_test() {
         -stub \
         -work-dir "${work_dir}" \
         --pipeline "${pipeline}" \
-        --inputJsonFiles "${input_json}" \
+        ${input_flag} "${input_json}" \
         --pubdir "${RESULTS_DIR}/${test_name}" \
         -ansi-log false \
         2>&1 | tee "${SCRIPT_DIR}/${test_name}.log"; then
@@ -71,6 +76,7 @@ multiome_count|multiome|${TEST_INPUT_DIR}/multiome_count.json
 visium_count|visium|${TEST_INPUT_DIR}/visium_count.json
 xenium_relabel|xenium|${TEST_INPUT_DIR}/xenium_relabel.json
 xenium_resegment|xenium|${TEST_INPUT_DIR}/xenium_resegment.json
+gex_count_aggr|gex|${TEST_INPUT_DIR}/aggr
 "
 
 # ── Run tests ────────────────────────────────────────────────────────────────

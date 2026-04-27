@@ -1,10 +1,12 @@
 include { CELLRANGER_ARC_COUNT                } from "../modules/cellranger-arc_count"
+include { CELLRANGER_ARC_AGGR                 } from "../modules/cellranger-arc_aggr"
 include { RESOLVE_FASTQS                      } from "../modules/resolve_fastqs"
 include { FASTQC                              } from "../modules/fastqc"
 include { MULTIQC_DATASET                     } from "../modules/multiqc"
 include { MULTIQC                             } from "../modules/multiqc"
 include { MD5SUM                              } from "../modules/hash"
 include { MD5SUM as MD5SUM_INPUTS             } from "../modules/hash"
+include { MD5SUM as MD5SUM_AGGR               } from "../modules/hash"
 include { CAPTURE_WORKFLOW                    } from "../modules/metadata"
 include { GENERATE_METADATA                   } from "../modules/metadata"
 include { RECORD_TO_JSON_FILE                 } from "../modules/file_parsing"
@@ -38,7 +40,7 @@ workflow MULTIOME {
         // ── Hash inputs (parallel with tool) ────────────────────────
         input_hashes = MD5SUM_INPUTS(resolved.fastq)
 
-        // ── Tool execution (uses record directly) ───────────────────
+        // ── Tool execution ──────────────────────────────────────────
         tool_json = RECORD_TO_JSON_FILE(validated)
         tool_csv  = JSON_TO_LIBRARIES_CSV(tool_json)
         tool_out  = CELLRANGER_ARC_COUNT(tool_csv)
@@ -48,6 +50,21 @@ workflow MULTIOME {
             .join(input_hashes.hashes)
             .join(tool_out.metrics)
         GENERATE_METADATA(meta_ch, wf_json.json)
+
+        // ── cellranger-arc aggr (optional) ──────────────────────────
+        aggr_ch = tool_out.results
+            .filter { rec, _dir -> rec.pipeline.containsKey('aggr_id') }
+            .map { rec, dir ->
+                tuple(rec.pipeline.aggr_id, rec.pipeline.tool_version, rec.multiome.reference,
+                      rec.pipeline.dataset_id,
+                      file("${dir}/atac_fragments.tsv.gz"),
+                      file("${dir}/per_barcode_metrics.csv"),
+                      file("${dir}/gex_molecule_info.h5"))
+            }
+            .groupTuple(by: [0, 1, 2])
+
+        CELLRANGER_ARC_AGGR(aggr_ch)
+        MD5SUM_AGGR(CELLRANGER_ARC_AGGR.out.results)
 
     emit:
         results      = tool_out.results

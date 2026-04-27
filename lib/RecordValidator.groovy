@@ -48,7 +48,10 @@ class RecordValidator {
             throw new IllegalArgumentException(
                 "GEX record '${record.pipeline.dataset_id}' missing 'gene-expression' section."
             )
-        if (!record['gene-expression'].reference)
+        // Cellranger multi for Flex (v2) only requires a probe-set, not a reference.
+        def hasProbeSet = record['gene-expression']['probe-set']
+        def isMulti     = record.containsKey('samples')
+        if (!record['gene-expression'].reference && !(isMulti && hasProbeSet))
             throw new IllegalArgumentException(
                 "GEX record '${record.pipeline.dataset_id}' missing 'gene-expression.reference'."
             )

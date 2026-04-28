@@ -126,7 +126,12 @@ class Config:
             fout.write("\n".join(content))
 
     def dump_unsectioned_csv(self, output_file, section_key="libraries"):
-        """Write a flat (unsectioned) CSV from a specific section."""
+        """Write a flat (unsectioned) CSV from a specific section.
+
+        For the 'libraries' section, translate multi-format keys (fastq_id,
+        feature_types) to the count-format keys (sample, library_type) that
+        `cellranger count --libraries` expects, and drop multi-only columns.
+        """
         if section_key not in self.config:
             raise KeyError(
                 f"Section '{section_key}' not found in config. "
@@ -136,8 +141,20 @@ class Config:
         if not rows:
             raise ValueError(f"Section '{section_key}' is empty")
 
-        with open(output_file, "w", newline="") as fout:
+        if section_key == "libraries":
+            headers = ["fastqs", "sample", "library_type"]
+            translated = []
+            for row in rows:
+                translated.append({
+                    "fastqs":       row.get("fastqs", ""),
+                    "sample":       row.get("fastq_id") or row.get("sample", ""),
+                    "library_type": row.get("feature_types") or row.get("library_type", ""),
+                })
+            rows = translated
+        else:
             headers = list(rows[0].keys())
+
+        with open(output_file, "w", newline="") as fout:
             writer = csv.DictWriter(fout, fieldnames=headers)
             writer.writeheader()
             writer.writerows(rows)

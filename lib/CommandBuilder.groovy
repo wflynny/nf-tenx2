@@ -168,7 +168,9 @@ class CommandBuilder {
         def reference = record['atac'].reference
         def libraries = record.libraries
         def fastqDirs = libraries.collect { lib -> lib.fastqs }.unique().join(',')
-        def samples   = libraries.collect { lib -> lib.sample }.unique().join(',')
+        // 2026-04-28 -- CR-ATAC doesn't support libraries or multi csv, and our JSON input 
+        // may use the multi-specification, so we use this closure.
+        def samples   = libraries.collect { lib -> lib.fastq_id ?: lib.sample }.unique().join(',')
 
         def cmd = []
         cmd << "cellranger-atac count"
@@ -198,7 +200,10 @@ class CommandBuilder {
         def reference = record['gene-expression'].reference
         def libraries = record.libraries
         def fastqDirs = libraries.collect { lib -> lib.fastqs }.unique().join(',')
-        def samples   = libraries.collect { lib -> lib.sample }.unique().join(',')
+        // 2026-04-28 -- SR does support libraries or multi csvs, but documentation shows this invocation pattern
+        // So it's easier to just use all CLI arguments, and thus we need to support possibly multi.csv-like
+        // inputs, hence this closure.
+        def samples   = libraries.collect { lib -> lib.fastq_id ?: lib.sample }.unique().join(',')
         def spatial   = record.get('spatial', [:])
 
         def cmd = []

@@ -50,8 +50,9 @@ def extract_sample_prefixes(record) {
     def libs = record?.libraries
     if (libs instanceof List) {
         libs.each { lib ->
-            if (lib?.sample) {
-                prefixes.add(lib.sample)
+            def prefix = lib?.fastq_id ?: lib?.sample
+            if (prefix) {
+                prefixes.add(prefix)
             }
         }
     }

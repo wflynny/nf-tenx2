@@ -8,7 +8,6 @@ include { MULTIOME   } from "./workflows/multiome"
 include { VISIUM     } from "./workflows/visium"
 include { XENIUM     } from "./workflows/xenium"
 include { INITIALIZE } from "./workflows/initialize"
-include { COMPLETE   } from "./workflows/completion"
 include { collect_input_json_files } from "./modules/utils"
 
 workflow {
@@ -42,6 +41,8 @@ workflow {
     } else {
         error "Unknown pipeline '${pipeline}'. Use one of: gex, atac, multiome, visium, xenium"
     }
+}
 
-    COMPLETE()
+workflow.onComplete {
+    log.info "Pipeline complete. Status: ${workflow.success ? 'OK' : 'FAILED'}"
 }

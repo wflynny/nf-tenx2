@@ -6,6 +6,8 @@ test/.nextflow*
 test/work/
 test/results/
 test/*.log*
+test/*.json
+test/*/*.json
 
 # OS
 .DS_Store

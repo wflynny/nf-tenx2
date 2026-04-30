@@ -18,6 +18,7 @@ workflow ATAC {
     take:
         records
         pipeline_version
+        pubdir
 
     main:
         validated = records.map { rec ->
@@ -32,7 +33,7 @@ workflow ATAC {
 
         // ── Publish FASTQs to client-accessible dir on a compute node
         //    (decoupled from analysis; nothing downstream depends on it).
-        PUBLISH_FASTQS(resolved.fastq)
+        PUBLISH_FASTQS(resolved.fastq, pubdir)
 
         // ── Falco (FastQC) per file ─────────────────────────────────
         fastq_ch = resolved.fastq.flatMap { rec, fqs ->

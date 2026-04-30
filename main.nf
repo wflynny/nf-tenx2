@@ -30,13 +30,13 @@ workflow {
         if (pipeline == null) {
             error "No pipeline supplied! Use --pipeline [gex|atac|multiome|visium|xenium]"
         } else if (pipeline == 'gex') {
-            GEX(records, version)
+            GEX(records, version, pubdir)
         } else if (pipeline == 'atac') {
-            ATAC(records, version)
+            ATAC(records, version, pubdir)
         } else if (pipeline == 'multiome') {
-            MULTIOME(records, version)
+            MULTIOME(records, version, pubdir)
         } else if (pipeline == 'visium') {
-            VISIUM(records, version)
+            VISIUM(records, version, pubdir)
         } else if (pipeline == 'xenium') {
             XENIUM(records, version)
         } else {

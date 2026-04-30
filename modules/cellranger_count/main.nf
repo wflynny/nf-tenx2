@@ -1,4 +1,4 @@
-include { strip_comment; record_get; calc_localmem } from "../utils"
+include { calc_localmem } from "../utils"
 
 process CELLRANGER_COUNT {
 

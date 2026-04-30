@@ -7,14 +7,14 @@
     },
     "libraries": [
         {
+            "fastq_id": "",
             "fastqs": "",
-            "sample": "",
-            "library_type": ""
+            "feature_types": ""
         },
         {
+            "fastq_id": "",
             "fastqs": "",
-            "sample": "",
-            "library_type": ""
+            "feature_types": ""
         }
     ],
     "pipeline": {

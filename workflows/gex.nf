@@ -9,6 +9,7 @@ include { CELLRANGER_MULTI                        } from "../modules/cellranger_
 include { CELLRANGER_COUNT                        } from "../modules/cellranger_count"
 include { CELLRANGER_AGGR                         } from "../modules/cellranger_aggr"
 include { RESOLVE_FASTQS                          } from "../modules/resolve_fastqs"
+include { PUBLISH_FASTQS                          } from "../modules/publish_fastqs"
 include { FASTQC                                  } from "../modules/fastqc"
 include { MULTIQC_DATASET                         } from "../modules/multiqc"
 include { MULTIQC                                 } from "../modules/multiqc"
@@ -44,6 +45,10 @@ workflow GEX {
 
         // ── Resolve FASTQs on compute node ──────────────────────────
         resolved = RESOLVE_FASTQS(validated)
+
+        // ── Publish FASTQs to client-accessible dir on a compute node
+        //    (decoupled from analysis; nothing downstream depends on it).
+        PUBLISH_FASTQS(resolved.fastq)
 
         // ── Falco (FastQC) per file ─────────────────────────────────
         fastq_ch = resolved.fastq.flatMap { rec, fqs ->

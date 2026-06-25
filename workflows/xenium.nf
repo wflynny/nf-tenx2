@@ -51,6 +51,11 @@ workflow XENIUM {
         GENERATE_METADATA_RELABEL(relabel_meta_ch, wf_json.json)
 
     emit:
-        resegment_results = reseg_out.results
-        relabel_results   = relabel_out.results
+        results          = reseg_out.results.mix(relabel_out.results)
+        metadata         = GENERATE_METADATA.out.metadata.mix(GENERATE_METADATA_RELABEL.out.metadata)
+        input_checksums  = Channel.empty()
+        fastqc           = Channel.empty()
+        multiqc_dataset  = Channel.empty()
+        multiqc_run      = Channel.empty()
+        aggr_results     = Channel.empty()
 }

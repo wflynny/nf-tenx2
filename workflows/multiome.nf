@@ -73,6 +73,11 @@ workflow MULTIOME {
         MD5SUM_AGGR(CELLRANGER_ARC_AGGR.out.results)
 
     emit:
-        results      = tool_out.results
-        multiqc_html = MULTIQC.out.html
+        results          = tool_out.results
+        metadata         = GENERATE_METADATA.out.metadata
+        input_checksums  = input_hashes.hashes
+        fastqc           = fastqc_out.results
+        multiqc_dataset  = MULTIQC_DATASET.out.html.mix(MULTIQC_DATASET.out.data)
+        multiqc_run      = MULTIQC.out.html.mix(MULTIQC.out.data)
+        aggr_results     = CELLRANGER_ARC_AGGR.out.results
 }

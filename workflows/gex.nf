@@ -114,6 +114,11 @@ workflow GEX {
         MD5SUM_AGGR(CELLRANGER_AGGR.out.results)
 
     emit:
-        all_results  = all_results
-        multiqc_html = MULTIQC.out.html
+        results          = all_results
+        metadata         = GENERATE_METADATA.out.metadata.mix(GENERATE_METADATA_MULTI.out.metadata)
+        input_checksums  = count_input_hashes.hashes.mix(multi_input_hashes.hashes)
+        fastqc           = fastqc_out.results
+        multiqc_dataset  = MULTIQC_DATASET.out.html.mix(MULTIQC_DATASET.out.data)
+        multiqc_run      = MULTIQC.out.html.mix(MULTIQC.out.data)
+        aggr_results     = CELLRANGER_AGGR.out.results
 }

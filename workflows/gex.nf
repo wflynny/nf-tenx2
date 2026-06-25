@@ -21,9 +21,9 @@ include { MD5SUM as MD5SUM_AGGR                   } from "../modules/hash"
 include { CAPTURE_WORKFLOW                        } from "../modules/metadata"
 include { GENERATE_METADATA                       } from "../modules/metadata"
 include { GENERATE_METADATA as GENERATE_METADATA_MULTI } from "../modules/metadata"
-include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE       } from "../modules/file_parsing"
-include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE_MULTI } from "../modules/file_parsing"
-include { JSON_TO_MULTI_CSV                       } from "../modules/file_parsing"
+include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE       } from "../modules/file_parsing_typed"
+include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE_MULTI } from "../modules/file_parsing_typed"
+include { JSON_TO_MULTI_CSV                       } from "../modules/file_parsing_typed"
 include { JSON_TO_LIBRARIES_CSV                   } from "../modules/file_parsing"
 include { recordFromMap                           } from "../modules/types"
 include { capture_workflow_json                   } from "../modules/utils"
@@ -63,22 +63,20 @@ workflow GEX {
         MULTIQC(fastqc_out.results.map { _meta, qc_dir -> qc_dir }.collect())
 
         // ── Hash inputs (parallel with tools) ───────────────────────
-        resolved.fastq
+        input_hash_branched = resolved.fastq
             .branch { rec, _fqs ->
                 multi: rec.samples != null
                 count: true
             }
-            .set { input_hash_branched }
         count_input_hashes = MD5SUM_INPUTS(input_hash_branched.count)
         multi_input_hashes = MD5SUM_INPUTS_MULTI(input_hash_branched.multi)
 
         // ── Branch records for tool execution ───────────────────────
-        validated
+        branched = validated
             .branch { rec ->
                 multi: rec.samples != null
                 count: true
             }
-            .set { branched }
 
         // ── cellranger count ────────────────────────────────────────
         count_json = RECORD_TO_JSON_FILE(branched.count)

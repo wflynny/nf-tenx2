@@ -20,12 +20,11 @@ workflow XENIUM {
 
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
-        validated
+        branched = validated
             .branch { rec ->
                 resegment: rec.xenium?.action == 'resegment'
                 relabel:   rec.xenium?.action == 'relabel'
             }
-            .set { branched }
 
         // Resegment
         reseg_out  = XENIUMRANGER_RESEGMENT(branched.resegment)
@@ -53,9 +52,9 @@ workflow XENIUM {
     emit:
         results          = reseg_out.results.mix(relabel_out.results)
         metadata         = GENERATE_METADATA.out.metadata.mix(GENERATE_METADATA_RELABEL.out.metadata)
-        input_checksums  = Channel.empty()
-        fastqc           = Channel.empty()
-        multiqc_dataset  = Channel.empty()
-        multiqc_run      = Channel.empty()
-        aggr_results     = Channel.empty()
+        input_checksums  = channel.empty()
+        fastqc           = channel.empty()
+        multiqc_dataset  = channel.empty()
+        multiqc_run      = channel.empty()
+        aggr_results     = channel.empty()
 }

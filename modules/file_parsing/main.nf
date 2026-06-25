@@ -6,41 +6,11 @@
  * representation and the CSV formats required by cellranger count/multi.
  */
 
-include { recordToMap } from "../types"
-
 /*
- * Typed variant of RECORD_TO_JSON_FILE for workflows that pass a typed
- * TenxRecord (currently GEX only). Serializes the record's original map via
- * recordToMap() so the on-disk JSON keeps its hyphenated keys, and passes the
- * typed record through untouched. The Map-based RECORD_TO_JSON_FILE below is
- * retained for assays still on raw maps.
+ * Map-based record serializers. The typed (TenxRecord) counterparts used by the
+ * GEX workflow live in ../file_parsing_typed; these remain here for the
+ * atac/multiome/visium workflows that still pass raw Map records.
  */
-process RECORD_TO_JSON_FILE_TYPED {
-    label 'process_single'
-
-    input:
-        val(record)
-
-    output:
-        tuple val(record), path("rec.json")
-
-    script:
-    def jsonString = groovy.json.JsonOutput.toJson(recordToMap(record))
-    """
-    cat <<- 'HEREDOC' > rec.json
-    ${jsonString}
-    HEREDOC
-    """
-
-    stub:
-    def jsonString = groovy.json.JsonOutput.toJson(recordToMap(record))
-    """
-    cat <<- 'HEREDOC' > rec.json
-    ${jsonString}
-    HEREDOC
-    """
-}
-
 process RECORD_TO_JSON_FILE {
     label 'process_single'
 
@@ -64,34 +34,6 @@ process RECORD_TO_JSON_FILE {
     cat <<- 'HEREDOC' > rec.json
     ${jsonString}
     HEREDOC
-    """
-}
-
-process JSON_TO_MULTI_CSV {
-    label 'process_single'
-
-    input:
-        tuple val(record), path("rec.json")
-
-    output:
-        tuple val(record), path("multi.csv")
-
-    script:
-    """
-    cellranger_csv.py \\
-        --input-file rec.json \\
-        --output-type multi \\
-        --output-file multi.csv
-    """
-
-    stub:
-    """
-    echo "[gene-expression]" > multi.csv
-    echo "reference,/stub/ref" >> multi.csv
-    echo "" >> multi.csv
-    echo "[libraries]" >> multi.csv
-    echo "fastq_id,fastqs,feature_types" >> multi.csv
-    echo "stub,/stub/fastqs,Gene Expression" >> multi.csv
     """
 }
 

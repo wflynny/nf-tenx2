@@ -24,14 +24,6 @@ def collect_input_json_files(inputJsonFiles, inputDir) {
 }
 
 /**
- * Determine whether a GEX record should use cellranger multi vs cellranger count.
- * Multi is triggered by the presence of a 'samples' section.
- */
-def is_multi_record(record) {
-    return record.containsKey('samples')
-}
-
-/**
  * Calculate --localmem value for 10x tools from task.memory.
  * Returns 95% of available memory in GB, with a fallback default
  * if task.memory is null (e.g. no profile loaded).

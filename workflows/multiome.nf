@@ -10,8 +10,9 @@ include { MD5SUM as MD5SUM_INPUTS             } from "../modules/hash"
 include { MD5SUM as MD5SUM_AGGR               } from "../modules/hash"
 include { CAPTURE_WORKFLOW                    } from "../modules/metadata"
 include { GENERATE_METADATA                   } from "../modules/metadata"
-include { RECORD_TO_JSON_FILE                 } from "../modules/file_parsing"
+include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE } from "../modules/file_parsing_typed"
 include { JSON_TO_LIBRARIES_CSV               } from "../modules/file_parsing"
+include { recordFromMap                       } from "../modules/types"
 include { capture_workflow_json               } from "../modules/utils"
 
 workflow MULTIOME {
@@ -21,9 +22,12 @@ workflow MULTIOME {
         pubdir
 
     main:
-        validated = records.map { rec ->
-            RecordValidator.validateMultiome(rec)
-            rec
+        // Validate on the raw map, then lift into a typed TenxNGSRecord that
+        // flows through the wiring (lowered back to raw.map at serialization
+        // and emit boundaries).
+        validated = records.map { raw ->
+            RecordValidator.validateMultiome(raw)
+            recordFromMap(raw)
         }
 
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
@@ -55,11 +59,12 @@ workflow MULTIOME {
         meta_ch = output_hashes.hashes
             .join(input_hashes.hashes)
             .join(tool_out.metrics)
+            .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA(meta_ch, wf_json.json)
 
         // ── cellranger-arc aggr (optional) ──────────────────────────
         aggr_ch = tool_out.results
-            .filter { rec, _dir -> rec.pipeline.containsKey('aggr_id') }
+            .filter { rec, _dir -> rec.pipeline.aggr_id != null }
             .map { rec, dir ->
                 tuple(rec.pipeline.aggr_id, rec.pipeline.tool_version, rec.multiome.reference,
                       rec.pipeline.dataset_id,
@@ -73,9 +78,11 @@ workflow MULTIOME {
         MD5SUM_AGGR(CELLRANGER_ARC_AGGR.out.results)
 
     emit:
-        results          = tool_out.results
+        // Lower the typed record back to its raw map at the workflow boundary so
+        // downstream publishing (incl. the datasets.json index) is unchanged.
+        results          = tool_out.results.map { rec, dir -> tuple(rec.raw, dir) }
         metadata         = GENERATE_METADATA.out.metadata
-        input_checksums  = input_hashes.hashes
+        input_checksums  = input_hashes.hashes.map { rec, md5 -> tuple(rec.raw, md5) }
         fastqc           = fastqc_out.results
         multiqc_dataset  = MULTIQC_DATASET.out.html.mix(MULTIQC_DATASET.out.data)
         multiqc_run      = MULTIQC.out.html.mix(MULTIQC.out.data)

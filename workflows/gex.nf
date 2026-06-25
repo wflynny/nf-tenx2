@@ -38,7 +38,7 @@ workflow GEX {
     main:
         // ── Validate (on the raw map) then lift into a typed record ──
         //    Validation stays map-based (shared RecordValidator); the typed
-        //    TenxRecord then flows through GEX wiring for typed field access.
+        //    TenxNGSRecord then flows through GEX wiring for typed field access.
         validated = records.map { raw ->
             RecordValidator.validateGex(raw)
             recordFromMap(raw)

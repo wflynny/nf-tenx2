@@ -7,7 +7,7 @@
  */
 
 /*
- * Map-based record serializers. The typed (TenxRecord) counterparts used by the
+ * Map-based record serializers. The typed (TenxNGSRecord) counterparts used by the
  * GEX workflow live in ../file_parsing_typed; these remain here for the
  * atac/multiome/visium workflows that still pass raw Map records.
  */

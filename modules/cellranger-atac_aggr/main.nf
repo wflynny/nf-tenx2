@@ -1,3 +1,5 @@
+nextflow.enable.types = true
+
 include { calc_localmem } from "../utils"
 
 process CELLRANGER_ATAC_AGGR {
@@ -7,21 +9,22 @@ process CELLRANGER_ATAC_AGGR {
     module { task.executor == 'local' ? '' : "cellranger-atac/${version}" }
 
     input:
-        tuple val(aggr_id), val(version), val(reference), val(dataset_ids),
-              path(fragments, stageAs: '?_fragments.tsv.gz'),
-              path(cells, stageAs: '?_singlecell.csv')
+        tuple(aggr_id: String, version: String, reference: String, dataset_ids: List<String>,
+              fragments: List<Path>, cells: List<Path>)
+
+    stage:
+        stageAs fragments, '?_fragments.tsv.gz'
+        stageAs cells, '?_singlecell.csv'
 
     output:
-        tuple val(aggr_id), path("cellranger-atac-aggr"),                        emit: results
-        tuple val(aggr_id), path("cellranger-atac-aggr/collected_metrics.json"), emit: metrics
+        results = tuple(aggr_id, file("cellranger-atac-aggr"))
+        metrics = tuple(aggr_id, file("cellranger-atac-aggr/collected_metrics.json"))
 
     script:
     def localmem = calc_localmem(task.memory)
     def cmd      = CommandBuilder.cellrangerAtacAggr(aggr_id, reference, task.cpus, localmem)
     def csv_lines = ["library_id,fragments,cells"]
-    def frag_list = fragments instanceof List ? fragments : [fragments]
-    def cell_list = cells instanceof List ? cells : [cells]
-    dataset_ids.eachWithIndex { did, i -> csv_lines << "${did},${frag_list[i]},${cell_list[i]}" }
+    dataset_ids.eachWithIndex { did, i -> csv_lines << "${did},${fragments[i]},${cells[i]}" }
     def csv_content = csv_lines.join('\\n')
     """
     printf '${csv_content}\\n' > aggr.csv

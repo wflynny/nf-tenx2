@@ -1,3 +1,5 @@
+nextflow.enable.types = true
+
 include { calc_localmem } from "../utils"
 
 process SPACERANGER_AGGR {
@@ -7,18 +9,20 @@ process SPACERANGER_AGGR {
     module { task.executor == 'local' ? '' : "spaceranger/${version}" }
 
     input:
-        tuple val(aggr_id), val(version), val(dataset_ids), path(mol_h5s, stageAs: '?_molecule_info.h5')
+        tuple(aggr_id: String, version: String, dataset_ids: List<String>, mol_h5s: List<Path>)
+
+    stage:
+        stageAs mol_h5s, '?_molecule_info.h5'
 
     output:
-        tuple val(aggr_id), path("spaceranger-aggr"),                        emit: results
-        tuple val(aggr_id), path("spaceranger-aggr/collected_metrics.json"), emit: metrics
+        results = tuple(aggr_id, file("spaceranger-aggr"))
+        metrics = tuple(aggr_id, file("spaceranger-aggr/collected_metrics.json"))
 
     script:
     def localmem = calc_localmem(task.memory)
     def cmd      = CommandBuilder.spacerangerAggr(aggr_id, task.cpus, localmem)
     def csv_lines = ["sample_id,molecule_h5"]
-    def h5_list = mol_h5s instanceof List ? mol_h5s : [mol_h5s]
-    dataset_ids.eachWithIndex { did, i -> csv_lines << "${did},${h5_list[i]}" }
+    dataset_ids.eachWithIndex { did, i -> csv_lines << "${did},${mol_h5s[i]}" }
     def csv_content = csv_lines.join('\\n')
     """
     printf '${csv_content}\\n' > aggr.csv

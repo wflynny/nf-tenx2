@@ -1,29 +1,30 @@
 /*
- * Typed (TenxRecord) file-conversion processes for the GEX workflow.
+ * Typed (TenxNGSRecord) file-conversion processes for the NGS workflows.
  *
- * These are the typed-port counterparts of the Map-based serializers in
- * ../file_parsing. They live in their own file because typed ports require
- * `nextflow.enable.types` per-file and a file cannot mix typed and legacy
- * processes — and ../file_parsing still hosts Map-based processes shared with
- * the atac/multiome/visium workflows.
+ * RECORD_TO_JSON_FILE_TYPED is used by all four NGS assays (GEX, ATAC,
+ * Multiome, Visium); JSON_TO_MULTI_CSV is GEX-multi only. They live in their
+ * own file because typed ports require `nextflow.enable.types` per-file and a
+ * file cannot mix typed and legacy processes — and ../file_parsing still hosts
+ * Map-based processes (JSON_TO_LIBRARIES_CSV etc.) shared with the legacy/raw
+ * code paths.
  *
- * The record flows through as a typed TenxRecord; serialization uses
+ * The record flows through as a typed TenxNGSRecord; serialization uses
  * recordToMap() so the on-disk JSON keeps its original hyphenated keys.
  */
 
 nextflow.enable.types = true
 
-include { recordToMap; TenxRecord } from "../types"
+include { recordToMap; TenxNGSRecord } from "../types"
 
 /*
- * Serialize a typed TenxRecord to JSON, preserving the original hyphenated-key
+ * Serialize a typed TenxNGSRecord to JSON, preserving the original hyphenated-key
  * shape via recordToMap(). The record is passed through untouched.
  */
 process RECORD_TO_JSON_FILE_TYPED {
     label 'process_single'
 
     input:
-        record: TenxRecord
+        record: TenxNGSRecord
 
     output:
         tuple(record, file("rec.json"))
@@ -52,7 +53,7 @@ process JSON_TO_MULTI_CSV {
     label 'process_single'
 
     input:
-        tuple(record: TenxRecord, rec_json: Path)
+        tuple(record: TenxNGSRecord, rec_json: Path)
 
     stage:
         stageAs rec_json, 'rec.json'

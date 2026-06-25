@@ -9,9 +9,9 @@
     },
     "libraries": [
         {
+            "fastq_id": "visium_sample1",
             "fastqs": "test/stub-fastqs/visium_sample1",
-            "sample": "visium_sample1",
-            "library_type": "Gene Expression"
+            "feature_types": "Gene Expression"
         }
     ],
     "pipeline": {

@@ -16,7 +16,7 @@ process CELLRANGER_MULTI {
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def cmd        = CommandBuilder.cellrangerMulti(record, task.cpus, localmem)
+    def cmd        = CommandBuilder.cellrangerMulti(record.raw, task.cpus, localmem)
     """
     ${cmd}
 
@@ -34,7 +34,7 @@ process CELLRANGER_MULTI {
 
     stub:
     def dataset_id = record.pipeline.dataset_id
-    def sample_ids = record.containsKey('samples') ? record.samples.collect { s -> s.sample_id ?: 'sample1' } : ['sample1']
+    def sample_ids = record.samples != null ? record.samples.collect { s -> s.sample_id ?: 'sample1' } : ['sample1']
     def mkdir_cmds = sample_ids.collect { sid ->
         """
         mkdir -p cellranger-multi/per_sample_outs/${sid}

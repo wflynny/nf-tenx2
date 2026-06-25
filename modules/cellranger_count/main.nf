@@ -16,7 +16,7 @@ process CELLRANGER_COUNT {
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def cmd        = CommandBuilder.cellrangerCount(record, task.cpus, localmem)
+    def cmd        = CommandBuilder.cellrangerCount(record.raw, task.cpus, localmem)
     """
     ${cmd}
 

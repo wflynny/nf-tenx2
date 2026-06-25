@@ -28,7 +28,7 @@ workflow {
             }
 
         // Each per-assay workflow returns a uniform set of named channels.
-        // Pipelines that don't produce a given output emit Channel.empty().
+        // Pipelines that don't produce a given output emit channel.empty().
         def out
         if (pipeline == null) {
             error "No pipeline supplied! Use --pipeline [gex|atac|multiome|visium|xenium]"

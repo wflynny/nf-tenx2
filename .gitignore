@@ -8,6 +8,7 @@ test/results/
 test/*.log*
 test/*.json
 test/*/*.json
+inputs/
 
 # OS
 .DS_Store

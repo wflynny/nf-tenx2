@@ -10,8 +10,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-# Add module resources bin/ to path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "modules" / "file_parsing" / "resources" / "usr" / "bin"))
+# Add the top-level bin/ to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "bin"))
 from cellranger_csv import Config, _load_csv, _load_json
 
 

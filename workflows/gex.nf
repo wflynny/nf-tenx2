@@ -21,23 +21,27 @@ include { MD5SUM as MD5SUM_AGGR                   } from "../modules/hash"
 include { CAPTURE_WORKFLOW                        } from "../modules/metadata"
 include { GENERATE_METADATA                       } from "../modules/metadata"
 include { GENERATE_METADATA as GENERATE_METADATA_MULTI } from "../modules/metadata"
-include { RECORD_TO_JSON_FILE                     } from "../modules/file_parsing"
-include { RECORD_TO_JSON_FILE as RECORD_TO_JSON_FILE_MULTI } from "../modules/file_parsing"
-include { JSON_TO_MULTI_CSV                       } from "../modules/file_parsing"
+include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE       } from "../modules/file_parsing_typed"
+include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE_MULTI } from "../modules/file_parsing_typed"
+include { JSON_TO_MULTI_CSV                       } from "../modules/file_parsing_typed"
 include { JSON_TO_LIBRARIES_CSV                   } from "../modules/file_parsing"
-include { is_multi_record; capture_workflow_json   } from "../modules/utils"
+include { recordFromMap                           } from "../modules/types"
+include { capture_workflow_json                   } from "../modules/utils"
 
 
 workflow GEX {
     take:
         records
         pipeline_version
+        pubdir
 
     main:
-        // ── Validate ────────────────────────────────────────────────
-        validated = records.map { rec ->
-            RecordValidator.validateGex(rec)
-            rec
+        // ── Validate (on the raw map) then lift into a typed record ──
+        //    Validation stays map-based (shared RecordValidator); the typed
+        //    TenxNGSRecord then flows through GEX wiring for typed field access.
+        validated = records.map { raw ->
+            RecordValidator.validateGex(raw)
+            recordFromMap(raw)
         }
 
         // ── Workflow provenance (once per run) ──────────────────────
@@ -48,7 +52,7 @@ workflow GEX {
 
         // ── Publish FASTQs to client-accessible dir on a compute node
         //    (decoupled from analysis; nothing downstream depends on it).
-        PUBLISH_FASTQS(resolved.fastq)
+        PUBLISH_FASTQS(resolved.fastq, pubdir)
 
         // ── Falco (FastQC) per file ─────────────────────────────────
         fastq_ch = resolved.fastq.flatMap { rec, fqs ->
@@ -59,22 +63,20 @@ workflow GEX {
         MULTIQC(fastqc_out.results.map { _meta, qc_dir -> qc_dir }.collect())
 
         // ── Hash inputs (parallel with tools) ───────────────────────
-        resolved.fastq
+        input_hash_branched = resolved.fastq
             .branch { rec, _fqs ->
-                multi: is_multi_record(rec)
+                multi: rec.samples != null
                 count: true
             }
-            .set { input_hash_branched }
         count_input_hashes = MD5SUM_INPUTS(input_hash_branched.count)
         multi_input_hashes = MD5SUM_INPUTS_MULTI(input_hash_branched.multi)
 
         // ── Branch records for tool execution ───────────────────────
-        validated
+        branched = validated
             .branch { rec ->
-                multi: is_multi_record(rec)
+                multi: rec.samples != null
                 count: true
             }
-            .set { branched }
 
         // ── cellranger count ────────────────────────────────────────
         count_json = RECORD_TO_JSON_FILE(branched.count)
@@ -85,6 +87,7 @@ workflow GEX {
         count_meta_ch = count_output_hashes.hashes
             .join(count_input_hashes.hashes)
             .join(count_out.metrics)
+            .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA(count_meta_ch, wf_json.json)
 
         // ── cellranger multi ────────────────────────────────────────
@@ -96,13 +99,14 @@ workflow GEX {
         multi_meta_ch = multi_output_hashes.hashes
             .join(multi_input_hashes.hashes)
             .join(multi_out.metrics)
+            .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA_MULTI(multi_meta_ch, wf_json.json)
 
         // ── cellranger aggr (optional) ──────────────────────────────
         all_results = count_out.results.mix(multi_out.results)
 
         aggr_ch = all_results
-            .filter { rec, _dir -> rec.pipeline.containsKey('aggr_id') }
+            .filter { rec, _dir -> rec.pipeline.aggr_id != null }
             .map { rec, dir ->
                 tuple(rec.pipeline.aggr_id, rec.pipeline.tool_version,
                       rec.pipeline.dataset_id, file("${dir}/molecule_info.h5"))
@@ -113,6 +117,13 @@ workflow GEX {
         MD5SUM_AGGR(CELLRANGER_AGGR.out.results)
 
     emit:
-        all_results  = all_results
-        multiqc_html = MULTIQC.out.html
+        // Lower the typed record back to its raw map at the workflow boundary so
+        // downstream publishing (incl. the datasets.json index) is unchanged.
+        results          = all_results.map { rec, dir -> tuple(rec.raw, dir) }
+        metadata         = GENERATE_METADATA.out.metadata.mix(GENERATE_METADATA_MULTI.out.metadata)
+        input_checksums  = count_input_hashes.hashes.mix(multi_input_hashes.hashes).map { rec, md5 -> tuple(rec.raw, md5) }
+        fastqc           = fastqc_out.results
+        multiqc_dataset  = MULTIQC_DATASET.out.html.mix(MULTIQC_DATASET.out.data)
+        multiqc_run      = MULTIQC.out.html.mix(MULTIQC.out.data)
+        aggr_results     = CELLRANGER_AGGR.out.results
 }

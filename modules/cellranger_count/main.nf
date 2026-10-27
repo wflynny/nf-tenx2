@@ -1,4 +1,7 @@
-include { strip_comment; record_get; calc_localmem } from "../utils"
+nextflow.enable.types = true
+
+include { calc_localmem } from "../utils"
+include { TenxNGSRecord    } from "../types"
 
 process CELLRANGER_COUNT {
 
@@ -7,16 +10,19 @@ process CELLRANGER_COUNT {
     module { task.executor == 'local' ? '' : "cellranger/${record.pipeline.tool_version}" }
 
     input:
-        tuple val(record), path("libraries.csv")
+        tuple(record: TenxNGSRecord, libraries_csv: Path)
+
+    stage:
+        stageAs libraries_csv, 'libraries.csv'
 
     output:
-        tuple val(record), path("cellranger"),                           emit: results
-        tuple val(record), path("cellranger/collected_metrics.json"),    emit: metrics
+        results = tuple(record, file("cellranger"))
+        metrics = tuple(record, file("cellranger/collected_metrics.json"))
 
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def cmd        = CommandBuilder.cellrangerCount(record, task.cpus, localmem)
+    def cmd        = CommandBuilder.cellrangerCount(record.raw, task.cpus, localmem)
     """
     ${cmd}
 

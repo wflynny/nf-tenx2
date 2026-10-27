@@ -47,7 +47,6 @@ run_test() {
 
     if NXF_HOME="${work_dir}/.nxf_home" \
         NXF_LOG_FILE="${SCRIPT_DIR}/${test_name}.nextflow.log" \
-        NXF_SYNTAX_PARSER=v2 \
         nextflow run "${PROJECT_DIR}/main.nf" \
         -profile testing \
         -stub \

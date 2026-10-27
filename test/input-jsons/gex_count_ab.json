@@ -6,14 +6,14 @@
     },
     "libraries": [
         {
+            "fastq_id": "gex_sample1",
             "fastqs": "test/stub-fastqs/gex_sample1",
-            "sample": "gex_sample1",
-            "library_type": "Gene Expression"
+            "feature_types": "Gene Expression"
         },
         {
+            "fastq_id": "ab_sample1",
             "fastqs": "test/stub-fastqs/ab_sample1",
-            "sample": "ab_sample1",
-            "library_type": "Antibody Capture"
+            "feature_types": "Antibody Capture"
         }
     ],
     "pipeline": {

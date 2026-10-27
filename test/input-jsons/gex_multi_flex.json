@@ -6,14 +6,22 @@
     },
     "libraries": [
         {
+            "fastq_id": "gex_sample1",
             "fastqs": "test/stub-fastqs/gex_sample1",
-            "sample": "gex_sample1",
-            "library_type": "Gene Expression"
+            "feature_types": "Gene Expression"
         }
     ],
     "samples": [
-        {"sample_id": "FlexS1", "probe_barcode_ids": "BC001", "description": "Control"},
-        {"sample_id": "FlexS2", "probe_barcode_ids": "BC002", "description": "Treated"}
+        {
+            "sample_id": "FlexS1",
+            "probe_barcode_ids": "BC001",
+            "description": "Control"
+        },
+        {
+            "sample_id": "FlexS2",
+            "probe_barcode_ids": "BC002",
+            "description": "Treated"
+        }
     ],
     "pipeline": {
         "tool_version": "9.0.1",

@@ -4,9 +4,9 @@
     },
     "libraries": [
         {
+            "fastq_id": "atac_sample1",
             "fastqs": "test/stub-fastqs/atac_sample1",
-            "sample": "atac_sample1",
-            "library_type": "Chromatin Accessibility"
+            "feature_types": "Chromatin Accessibility"
         }
     ],
     "pipeline": {

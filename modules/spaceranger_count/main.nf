@@ -1,4 +1,7 @@
+nextflow.enable.types = true
+
 include { calc_localmem } from "../utils"
+include { TenxNGSRecord } from "../types"
 
 process SPACERANGER_COUNT {
 
@@ -7,16 +10,19 @@ process SPACERANGER_COUNT {
     module { task.executor == 'local' ? '' : "spaceranger/${record.pipeline.tool_version}" }
 
     input:
-        tuple val(record), path("libraries.csv")
+        tuple(record: TenxNGSRecord, libraries_csv: Path)
+
+    stage:
+        stageAs libraries_csv, 'libraries.csv'
 
     output:
-        tuple val(record), path("spaceranger"),                       emit: results
-        tuple val(record), path("spaceranger/collected_metrics.json"),  emit: metrics
+        results = tuple(record, file("spaceranger"))
+        metrics = tuple(record, file("spaceranger/collected_metrics.json"))
 
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def cmd        = CommandBuilder.spacerangerCount(record, task.cpus, localmem)
+    def cmd        = CommandBuilder.spacerangerCount(record.raw, task.cpus, localmem)
     """
     ${cmd}
 

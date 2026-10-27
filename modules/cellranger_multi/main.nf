@@ -1,4 +1,7 @@
+nextflow.enable.types = true
+
 include { calc_localmem } from "../utils"
+include { TenxNGSRecord    } from "../types"
 
 process CELLRANGER_MULTI {
 
@@ -7,16 +10,19 @@ process CELLRANGER_MULTI {
     module { task.executor == 'local' ? '' : "cellranger/${record.pipeline.tool_version}" }
 
     input:
-        tuple val(record), path("multi.csv")
+        tuple(record: TenxNGSRecord, multi_csv: Path)
+
+    stage:
+        stageAs multi_csv, 'multi.csv'
 
     output:
-        tuple val(record), path("cellranger-multi"),                                         emit: results
-        tuple val(record), path("cellranger-multi/collected_metrics.json"),                   emit: metrics
+        results = tuple(record, file("cellranger-multi"))
+        metrics = tuple(record, file("cellranger-multi/collected_metrics.json"))
 
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def cmd        = CommandBuilder.cellrangerMulti(record, task.cpus, localmem)
+    def cmd        = CommandBuilder.cellrangerMulti(record.raw, task.cpus, localmem)
     """
     ${cmd}
 
@@ -34,7 +40,7 @@ process CELLRANGER_MULTI {
 
     stub:
     def dataset_id = record.pipeline.dataset_id
-    def sample_ids = record.containsKey('samples') ? record.samples.collect { s -> s.sample_id ?: 'sample1' } : ['sample1']
+    def sample_ids = record.samples != null ? record.samples.collect { s -> s.sample_id ?: 'sample1' } : ['sample1']
     def mkdir_cmds = sample_ids.collect { sid ->
         """
         mkdir -p cellranger-multi/per_sample_outs/${sid}

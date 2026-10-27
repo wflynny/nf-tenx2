@@ -17,14 +17,14 @@ process PUBLISH_FASTQS {
 
     input:
         tuple val(record), path(fastqs, stageAs: 'in/*')
+        val(pubdir)
 
     output:
         tuple val(record), path("manifest.txt"), emit: manifest
 
     script:
     def datasetId = record.pipeline.dataset_id
-    def pd        = params.pubdir ?: "${workflow.launchDir}/results_${workflow.runName}"
-    def dest      = "${pd}/${datasetId}/fastq"
+    def dest      = "${pubdir}/${datasetId}/fastq"
     def parallel  = Math.max(task.cpus * 2, 4)
     """
     mkdir -p '${dest}'

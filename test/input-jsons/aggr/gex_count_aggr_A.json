@@ -1,0 +1,19 @@
+{
+    "gene-expression": {
+        "reference": "/ref/refdata-gex-GRCh38-2024-A",
+        "create-bam": "false",
+        "include-introns": "true"
+    },
+    "libraries": [
+        {
+            "fastq_id": "gex_sample1",
+            "fastqs": "test/stub-fastqs/gex_sample1",
+            "feature_types": "Gene Expression"
+        }
+    ],
+    "pipeline": {
+        "tool_version": "9.0.1",
+        "dataset_id": "TestAggr_A",
+        "aggr_id": "TestGEX_Aggr"
+    }
+}

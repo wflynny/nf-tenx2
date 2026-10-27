@@ -6,6 +6,9 @@ test/.nextflow*
 test/work/
 test/results/
 test/*.log*
+test/*.json
+test/*/*.json
+inputs/
 
 # OS
 .DS_Store
@@ -18,4 +21,4 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
-.pytest_cache/
+.pytest_cache/results/

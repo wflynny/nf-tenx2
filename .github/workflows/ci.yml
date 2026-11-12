@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, modernize]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -24,19 +24,13 @@ jobs:
   stub-tests:
     name: Nextflow lint + stub tests
     runs-on: ubuntu-latest
-    env:
-      NXF_VER: "26.04.4"
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-
-      - uses: nextflow-io/setup-nextflow@v2
+      - uses: nf-core/setup-nextflow@v3
         with:
           version: "26.04.4"
+          java-version: "21"
 
       - name: Lint Nextflow code
         run: nextflow lint .

@@ -17,7 +17,6 @@ process CELLRANGER_MULTI {
 
     output:
         results = tuple(record, file("cellranger-multi"))
-        metrics = tuple(record, file("cellranger-multi/collected_metrics.json"))
 
     script:
     def localmem   = calc_localmem(task.memory)
@@ -31,11 +30,6 @@ process CELLRANGER_MULTI {
     mv ${dataset_id}/_* cellranger-multi/_files/ || true
     mv ${dataset_id}/*.tgz cellranger-multi/ || true
     mv ${dataset_id}/outs/* cellranger-multi/
-
-    collect_metrics.py \\
-        --pipestance-dir ${dataset_id} \\
-        --tool-dir cellranger-multi \\
-        --out cellranger-multi/collected_metrics.json
     """
 
     stub:
@@ -62,6 +56,5 @@ process CELLRANGER_MULTI {
 
     ${mkdir_cmds}
 
-    echo '{"per_sample_outs/sample1/metrics_summary.csv":{"Estimated Number of Cells":"3000","Mean Reads per Cell":"40000"}}' > cellranger-multi/collected_metrics.json
     """
 }

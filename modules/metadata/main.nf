@@ -44,7 +44,7 @@ process GENERATE_METADATA {
     label 'process_single'
 
     input:
-        tuple val(record), path("output_checksums.md5"), path("input_checksums.md5"), path("metrics.*")
+        tuple val(record), path("output_checksums.md5"), path("input_checksums.md5"), path("collected_metrics.json")
         path(workflow_json)
 
     output:
@@ -52,9 +52,10 @@ process GENERATE_METADATA {
 
     script:
     def jsonRecord = groovy.json.JsonOutput.toJson(record)
-    def metrics_files = file("metrics.*").collect { f -> f.name }.join(" ")
     """
-    echo '${jsonRecord}' > rec.json
+    cat <<- 'HEREDOC' > rec.json
+    ${jsonRecord}
+    HEREDOC
 
     generate_metadata.py \\
         --record rec.json \\
@@ -62,11 +63,11 @@ process GENERATE_METADATA {
         --out pipeline-metadata.json \\
         --input-checksums input_checksums.md5 \\
         --output-checksums output_checksums.md5 \\
-        --metrics ${metrics_files ?: ''}
+        --metrics collected_metrics.json
     """
 
     stub:
     """
-    echo '{"metadata_schema_version":"1.1.0","record":{},"workflow":{}}' > pipeline-metadata.json
+    echo '{"metadata_schema_version":"1.2.0","record":{},"workflow":{}}' > pipeline-metadata.json
     """
 }

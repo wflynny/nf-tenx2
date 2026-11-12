@@ -57,4 +57,6 @@ workflow XENIUM {
         multiqc_dataset  = channel.empty()
         multiqc_run      = channel.empty()
         aggr_results     = channel.empty()
+        aggr_metrics     = channel.empty()
+        aggr_checksums   = channel.empty()
 }

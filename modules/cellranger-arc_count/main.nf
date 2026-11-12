@@ -17,7 +17,6 @@ process CELLRANGER_ARC_COUNT {
 
     output:
         results = tuple(record, file("cellranger-arc"))
-        metrics = tuple(record, file("cellranger-arc/collected_metrics.json"))
 
     script:
     def localmem   = calc_localmem(task.memory)
@@ -31,11 +30,6 @@ process CELLRANGER_ARC_COUNT {
     mv ${dataset_id}/_* cellranger-arc/_files/ || true
     mv ${dataset_id}/*.tgz cellranger-arc/ || true
     mv ${dataset_id}/outs/* cellranger-arc/
-
-    collect_metrics.py \\
-        --pipestance-dir ${dataset_id} \\
-        --tool-dir cellranger-arc \\
-        --out cellranger-arc/collected_metrics.json
     """
 
     stub:
@@ -53,6 +47,5 @@ process CELLRANGER_ARC_COUNT {
     touch cellranger-arc/per_barcode_metrics.csv
     echo 'metric,value' > cellranger-arc/summary.csv
     echo 'Estimated number of cells,8000' >> cellranger-arc/summary.csv
-    echo '{"summary.csv":{"metric":"Estimated number of cells","value":"8000"}}' > cellranger-arc/collected_metrics.json
     """
 }

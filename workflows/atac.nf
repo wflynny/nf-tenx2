@@ -8,6 +8,8 @@ include { MULTIQC                             } from "../modules/multiqc"
 include { MD5SUM                              } from "../modules/hash"
 include { MD5SUM as MD5SUM_INPUTS             } from "../modules/hash"
 include { MD5SUM as MD5SUM_AGGR               } from "../modules/hash"
+include { COLLECT_METRICS                     } from "../modules/collect_metrics"
+include { COLLECT_METRICS as COLLECT_METRICS_AGGR } from "../modules/collect_metrics"
 include { CAPTURE_WORKFLOW                    } from "../modules/metadata"
 include { GENERATE_METADATA                   } from "../modules/metadata"
 include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE } from "../modules/file_parsing_typed"
@@ -55,10 +57,11 @@ workflow ATAC {
         tool_csv  = JSON_TO_LIBRARIES_CSV(tool_json)
         tool_out  = CELLRANGER_ATAC_COUNT(tool_csv)
         output_hashes = MD5SUM(tool_out.results)
+        tool_metrics  = COLLECT_METRICS(tool_out.results)
 
         meta_ch = output_hashes.hashes
             .join(input_hashes.hashes)
-            .join(tool_out.metrics)
+            .join(tool_metrics.metrics)
             .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA(meta_ch, wf_json.json)
 
@@ -74,6 +77,7 @@ workflow ATAC {
 
         CELLRANGER_ATAC_AGGR(aggr_ch)
         MD5SUM_AGGR(CELLRANGER_ATAC_AGGR.out.results)
+        COLLECT_METRICS_AGGR(CELLRANGER_ATAC_AGGR.out.results)
 
     emit:
         // Lower the typed record back to its raw map at the workflow boundary so
@@ -85,4 +89,6 @@ workflow ATAC {
         multiqc_dataset  = MULTIQC_DATASET.out.html.mix(MULTIQC_DATASET.out.data)
         multiqc_run      = MULTIQC.out.html.mix(MULTIQC.out.data)
         aggr_results     = CELLRANGER_ATAC_AGGR.out.results
+        aggr_metrics     = COLLECT_METRICS_AGGR.out.metrics
+        aggr_checksums   = MD5SUM_AGGR.out.hashes
 }

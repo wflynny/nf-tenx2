@@ -16,14 +16,11 @@ process SPACERANGER_AGGR {
 
     output:
         results = tuple(aggr_id, file("spaceranger-aggr"))
-        metrics = tuple(aggr_id, file("spaceranger-aggr/collected_metrics.json"))
 
     script:
     def localmem = calc_localmem(task.memory)
     def cmd      = CommandBuilder.spacerangerAggr(aggr_id, task.cpus, localmem)
-    def csv_lines = ["sample_id,molecule_h5"]
-    dataset_ids.eachWithIndex { did, i -> csv_lines << "${did},${mol_h5s[i]}" }
-    def csv_content = csv_lines.join('\\n')
+    def csv_content = CommandBuilder.spacerangerAggrCsv(dataset_ids, mol_h5s)
     """
     printf '${csv_content}\\n' > aggr.csv
 
@@ -33,17 +30,11 @@ process SPACERANGER_AGGR {
     mv ${aggr_id}/_* spaceranger-aggr/_files/ || true
     mv ${aggr_id}/*.tgz spaceranger-aggr/ || true
     mv ${aggr_id}/outs/* spaceranger-aggr/
-
-    collect_metrics.py \\
-        --pipestance-dir ${aggr_id} \\
-        --tool-dir spaceranger-aggr \\
-        --out spaceranger-aggr/collected_metrics.json
     """
 
     stub:
     """
     mkdir -p spaceranger-aggr/_files
     touch spaceranger-aggr/web_summary.html
-    echo '{"aggregated":true}' > spaceranger-aggr/collected_metrics.json
     """
 }

@@ -9,6 +9,7 @@ test/*.log*
 test/*.json
 test/*/*.json
 inputs/
+results/
 
 # OS
 .DS_Store

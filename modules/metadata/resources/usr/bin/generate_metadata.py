@@ -7,19 +7,18 @@ Ingests:
   - workflow JSON (nextflow runtime info)
   - input checksums (md5sum format)
   - output checksums (md5sum format)
-  - metrics files (CSV, JSON)
+  - collected metrics JSON (from collect_metrics.py)
 
 Produces:
   - pipeline-metadata.json
 
 No dependencies beyond Python 3 stdlib.
 """
-import csv
 import json
 import datetime
 from pathlib import Path
 
-METADATA_SCHEMA_VERSION = "1.1.0"
+METADATA_SCHEMA_VERSION = "1.2.0"
 
 
 def parse_checksum_file(path):
@@ -37,26 +36,6 @@ def parse_checksum_file(path):
                 filename = filename.lstrip("*").strip()
                 checksums.append({"filename": filename, "checksum": checksum})
     return sorted(checksums, key=lambda d: d["filename"])
-
-
-def parse_metrics_file(path):
-    """Parse a metrics file (CSV or JSON) into a dict."""
-    path = Path(path)
-    if not path.exists():
-        return {}
-
-    if path.suffix == ".json":
-        with open(path, "r") as fin:
-            mets = json.load(fin)
-    elif path.suffix == ".csv":
-        with open(path, "r") as fin:
-            reader = csv.DictReader(fin, delimiter=",", quotechar='"')
-            mets = next(reader, {})
-    else:
-        mets = {}
-
-    mets["_source_file"] = path.name
-    return mets
 
 
 def create_metadata(args):
@@ -85,18 +64,12 @@ def create_metadata(args):
         for p in args.output_checksums:
             metadata["output_checksums"].extend(parse_checksum_file(p))
 
-    # Metrics
-    metadata["metrics"] = []
-    if args.metrics:
-        seen = set()
-        for metrics_path in args.metrics:
-            mp = Path(metrics_path)
-            if str(mp) in seen or not mp.exists():
-                continue
-            seen.add(str(mp))
-            mets = parse_metrics_file(mp)
-            if mets:
-                metadata["metrics"].append(mets)
+    # Metrics, keyed by file path relative to the tool output dir. Xenium has
+    # none and passes a placeholder path that does not exist.
+    metadata["metrics"] = {}
+    if args.metrics and args.metrics.exists():
+        with open(args.metrics, "r") as fin:
+            metadata["metrics"] = json.load(fin)
 
     # Write output
     with open(args.out, "w") as fout:
@@ -119,8 +92,8 @@ def main():
                         help="Input file checksum files (md5sum format)")
     parser.add_argument("--output-checksums", type=Path, nargs="*", default=[],
                         help="Output file checksum files (md5sum format)")
-    parser.add_argument("--metrics", type=Path, nargs="*", default=[],
-                        help="Metrics files (CSV or JSON)")
+    parser.add_argument("--metrics", type=Path, default=None,
+                        help="collected_metrics.json from collect_metrics.py")
     args = parser.parse_args()
     create_metadata(args)
 

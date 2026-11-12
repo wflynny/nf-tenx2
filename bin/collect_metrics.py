@@ -12,17 +12,25 @@ import json
 import sys
 from pathlib import Path
 
-# metrics_summary.csv matches both CSV globs; the dedup in find_metric_files
-# keeps it once.
 METRIC_PATTERNS = ("*metrics*.csv", "*summary*.csv", "*summary*.json")
+# Per-barcode tables (cellranger-arc per_barcode_metrics.csv) match the patterns
+# but are not summary metrics; skip anything bigger than this. The pipeline
+# passes --max-bytes from ext.max_bytes in nextflow.config.
+MAX_BYTES = 5_000_000
 
 
-def find_metric_files(root):
-    """Deduped, sorted list of metric files under root."""
+def find_metric_files(root, max_bytes=MAX_BYTES):
+    """Deduped, sorted list of metric files under root, skipping big tables."""
     found = set()
     for pattern in METRIC_PATTERNS:
         found.update(root.rglob(pattern))
-    return sorted(found)
+    kept = []
+    for p in sorted(found):
+        if p.stat().st_size > max_bytes:
+            print(f"WARNING: skipping {p}: larger than {max_bytes} bytes", file=sys.stderr)
+        else:
+            kept.append(p)
+    return kept
 
 
 def parse_metric_file(path):
@@ -35,6 +43,18 @@ def parse_metric_file(path):
     return rows[0] if len(rows) == 1 else rows
 
 
+def collect(root, max_bytes=MAX_BYTES):
+    """Map each metric file's path relative to root to its parsed contents."""
+    metrics = {}
+    for path in find_metric_files(root, max_bytes):
+        rel = str(path.relative_to(root))
+        try:
+            metrics[rel] = parse_metric_file(path)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"WARNING: could not parse {path}: {e}", file=sys.stderr)
+    return metrics
+
+
 def main():
     import argparse
 
@@ -43,18 +63,12 @@ def main():
                         help="Tool output directory to traverse")
     parser.add_argument("--out", required=True, type=Path,
                         help="Output JSON file path")
+    parser.add_argument("--max-bytes", type=int, default=MAX_BYTES,
+                        help="Skip metric files larger than this")
     args = parser.parse_args()
 
-    metrics = {}
-    for path in find_metric_files(args.tool_dir):
-        rel = str(path.relative_to(args.tool_dir))
-        try:
-            metrics[rel] = parse_metric_file(path)
-        except (json.JSONDecodeError, OSError) as e:
-            print(f"WARNING: could not parse {path}: {e}", file=sys.stderr)
-
     with open(args.out, "w") as f:
-        json.dump(metrics, f, indent=2)
+        json.dump(collect(args.tool_dir, args.max_bytes), f, indent=2)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from pathlib import Path
 
 # Add the top-level bin/ to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "bin"))
-from collect_metrics import find_metric_files, parse_metric_file
+from collect_metrics import MAX_BYTES, collect, find_metric_files, parse_metric_file
 
 
 # ── Test fixtures ────────────────────────────────────────────────────────────
@@ -99,10 +99,24 @@ def test_parse_json():
     assert parse_metric_file(path) == {"n_reads": 1000, "ok": True}
 
 
+def test_skips_oversized_tables():
+    """A per-barcode table over MAX_BYTES matches the pattern but is skipped."""
+    root = build_output_tree({"metrics_summary.csv": "a,b\n1,2\n"})
+    (root / "per_barcode_metrics.csv").write_bytes(b"x" * (MAX_BYTES + 1))
+    assert [p.name for p in find_metric_files(root)] == ["metrics_summary.csv"]
+    assert len(find_metric_files(root, max_bytes=MAX_BYTES + 1)) == 2
+
+
+def test_unparseable_file_skipped():
+    """A file that fails to parse is left out; the rest are still collected."""
+    root = build_output_tree({"summary.json": "not json", "metrics_summary.csv": "a,b\n1,2\n"})
+    assert collect(root) == {"metrics_summary.csv": {"a": "1", "b": "2"}}
+
+
 def test_collected_dict_keyed_by_relpath():
     """The collected mapping is keyed by each file's path relative to the root."""
     root = build_output_tree(OCM_OUTPUT)
-    collected = {str(p.relative_to(root)): parse_metric_file(p) for p in find_metric_files(root)}
+    collected = collect(root)
     assert set(collected) == EXPECTED_METRIC_FILES
     assert collected["summary.json"] == {"summary": {"n_reads": 1000}}
     assert collected["per_sample_outs/C30_PF/metrics_summary.csv"] == {

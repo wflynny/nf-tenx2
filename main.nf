@@ -59,6 +59,8 @@ workflow {
         multiqc_dataset  = out.multiqc_dataset
         multiqc_run      = out.multiqc_run
         aggr_results     = out.aggr_results
+        aggr_metrics     = out.aggr_metrics
+        aggr_checksums   = out.aggr_checksums
 
     onComplete:
         log.info "Pipeline complete. Status: ${workflow.success ? 'OK' : 'FAILED'}"
@@ -95,5 +97,13 @@ output {
     // Aggregated cellranger/spaceranger results, keyed by aggr_id
     aggr_results {
         path { aggr_id, _dir -> aggr_id }
+    }
+    // Collected metrics per aggregation, keyed by aggr_id
+    aggr_metrics {
+        path { aggr_id, _json -> aggr_id }
+    }
+    // MD5 checksums of the aggregated output tree, keyed by aggr_id
+    aggr_checksums {
+        path { aggr_id, _md5 -> aggr_id }
     }
 }

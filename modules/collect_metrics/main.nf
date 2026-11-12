@@ -16,7 +16,7 @@ process COLLECT_METRICS {
 
     script:
     """
-    collect_metrics.py --tool-dir ${result_dir} --out collected_metrics.json
+    collect_metrics.py --tool-dir ${result_dir} --out collected_metrics.json --max-bytes ${task.ext.max_bytes}
     """
 
     stub:

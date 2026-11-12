@@ -17,7 +17,6 @@ process CELLRANGER_COUNT {
 
     output:
         results = tuple(record, file("cellranger"))
-        metrics = tuple(record, file("cellranger/collected_metrics.json"))
 
     script:
     def localmem   = calc_localmem(task.memory)
@@ -31,11 +30,6 @@ process CELLRANGER_COUNT {
     mv ${dataset_id}/_* cellranger/_files/ || true
     mv ${dataset_id}/*.tgz cellranger/ || true
     mv ${dataset_id}/outs/* cellranger/
-
-    collect_metrics.py \\
-        --pipestance-dir ${dataset_id} \\
-        --tool-dir cellranger \\
-        --out cellranger/collected_metrics.json
     """
 
     stub:
@@ -62,6 +56,5 @@ process CELLRANGER_COUNT {
     echo '{"summary":{}}' > cellranger/summary.json
     echo 'Estimated Number of Cells,Mean Reads per Cell' > cellranger/metrics_summary.csv
     echo '5000,50000' >> cellranger/metrics_summary.csv
-    echo '{"metrics_summary.csv":{"Estimated Number of Cells":"5000","Mean Reads per Cell":"50000"}}' > cellranger/collected_metrics.json
     """
 }

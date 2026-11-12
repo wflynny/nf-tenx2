@@ -19,14 +19,11 @@ process CELLRANGER_ARC_AGGR {
 
     output:
         results = tuple(aggr_id, file("cellranger-arc-aggr"))
-        metrics = tuple(aggr_id, file("cellranger-arc-aggr/collected_metrics.json"))
 
     script:
     def localmem = calc_localmem(task.memory)
     def cmd      = CommandBuilder.cellrangerArcAggr(aggr_id, reference, task.cpus, localmem)
-    def csv_lines = ["library_id,atac_fragments,per_barcode_metrics,gex_molecule_info"]
-    dataset_ids.eachWithIndex { did, i -> csv_lines << "${did},${atac_frags[i]},${pbm[i]},${gex_mol[i]}" }
-    def csv_content = csv_lines.join('\\n')
+    def csv_content = CommandBuilder.cellrangerArcAggrCsv(dataset_ids, atac_frags, pbm, gex_mol)
     """
     printf '${csv_content}\\n' > aggr.csv
 
@@ -36,17 +33,11 @@ process CELLRANGER_ARC_AGGR {
     mv ${aggr_id}/_* cellranger-arc-aggr/_files/ || true
     mv ${aggr_id}/*.tgz cellranger-arc-aggr/ || true
     mv ${aggr_id}/outs/* cellranger-arc-aggr/
-
-    collect_metrics.py \\
-        --pipestance-dir ${aggr_id} \\
-        --tool-dir cellranger-arc-aggr \\
-        --out cellranger-arc-aggr/collected_metrics.json
     """
 
     stub:
     """
     mkdir -p cellranger-arc-aggr/_files
     touch cellranger-arc-aggr/web_summary.html
-    echo '{"aggregated":true}' > cellranger-arc-aggr/collected_metrics.json
     """
 }

@@ -25,15 +25,11 @@ process CELLRANGER_AGGR {
 
     output:
         results = tuple(aggr_id, file("cellranger-aggr"))
-        metrics = tuple(aggr_id, file("cellranger-aggr/collected_metrics.json"))
 
     script:
     def localmem = calc_localmem(task.memory)
     def cmd      = CommandBuilder.cellrangerAggr(aggr_id, task.cpus, localmem)
-    // Build aggr CSV mapping dataset_ids to staged molecule_info files
-    def csv_lines = ["sample_id,molecule_h5"]
-    dataset_ids.eachWithIndex { did, i -> csv_lines << "${did},${mol_h5s[i]}" }
-    def csv_content = csv_lines.join('\\n')
+    def csv_content = CommandBuilder.cellrangerAggrCsv(dataset_ids, mol_h5s)
     """
     printf '${csv_content}\\n' > aggr.csv
 
@@ -43,11 +39,6 @@ process CELLRANGER_AGGR {
     mv ${aggr_id}/_* cellranger-aggr/_files/ || true
     mv ${aggr_id}/*.tgz cellranger-aggr/ || true
     mv ${aggr_id}/outs/* cellranger-aggr/
-
-    collect_metrics.py \\
-        --pipestance-dir ${aggr_id} \\
-        --tool-dir cellranger-aggr \\
-        --out cellranger-aggr/collected_metrics.json
     """
 
     stub:
@@ -57,6 +48,5 @@ process CELLRANGER_AGGR {
     mkdir -p cellranger-aggr/count
     touch cellranger-aggr/web_summary.html
     touch cellranger-aggr/count/filtered_feature_bc_matrix.h5
-    echo '{"aggregated":true}' > cellranger-aggr/collected_metrics.json
     """
 }

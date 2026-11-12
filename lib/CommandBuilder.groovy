@@ -302,6 +302,37 @@ class CommandBuilder {
         return cmd.join(' \\\n')
     }
 
+    // ─── aggr.csv content ──────────────────────────────────────────
+    //
+    // Each tool's aggr CSV has a different column layout. The contents map each
+    // dataset to its staged input files (the `?_*` staged names), so the file
+    // lists are passed in from the process. Returned with literal `\n` so the
+    // process can write them with `printf`.
+
+    static String cellrangerAggrCsv(List datasetIds, List molH5s) {
+        def lines = ["sample_id,molecule_h5"]
+        datasetIds.eachWithIndex { did, i -> lines << "${did},${molH5s[i]}" }
+        return lines.join('\\n')
+    }
+
+    static String cellrangerAtacAggrCsv(List datasetIds, List fragments, List cells) {
+        def lines = ["library_id,fragments,cells"]
+        datasetIds.eachWithIndex { did, i -> lines << "${did},${fragments[i]},${cells[i]}" }
+        return lines.join('\\n')
+    }
+
+    static String cellrangerArcAggrCsv(List datasetIds, List atacFrags, List pbm, List gexMol) {
+        def lines = ["library_id,atac_fragments,per_barcode_metrics,gex_molecule_info"]
+        datasetIds.eachWithIndex { did, i -> lines << "${did},${atacFrags[i]},${pbm[i]},${gexMol[i]}" }
+        return lines.join('\\n')
+    }
+
+    static String spacerangerAggrCsv(List datasetIds, List molH5s) {
+        def lines = ["sample_id,molecule_h5"]
+        datasetIds.eachWithIndex { did, i -> lines << "${did},${molH5s[i]}" }
+        return lines.join('\\n')
+    }
+
     // ─── xeniumranger resegment ─────────────────────────────────────
 
     static String xeniumrangerResegment(Map record, int cpus, long localmem) {

@@ -17,7 +17,6 @@ process SPACERANGER_COUNT {
 
     output:
         results = tuple(record, file("spaceranger"))
-        metrics = tuple(record, file("spaceranger/collected_metrics.json"))
 
     script:
     def localmem   = calc_localmem(task.memory)
@@ -30,11 +29,6 @@ process SPACERANGER_COUNT {
     mv ${dataset_id}/_* spaceranger/_files/ || true
     mv ${dataset_id}/*.tgz spaceranger/ || true
     mv ${dataset_id}/outs/* spaceranger/
-
-    collect_metrics.py \\
-        --pipestance-dir ${dataset_id} \\
-        --tool-dir spaceranger \\
-        --out spaceranger/collected_metrics.json
     """
 
     stub:
@@ -51,6 +45,5 @@ process SPACERANGER_COUNT {
     touch spaceranger/spatial/scalefactors_json.json
     echo 'Estimated Number of Spots Under Tissue,Mean Reads per Spot' > spaceranger/metrics_summary.csv
     echo '3500,60000' >> spaceranger/metrics_summary.csv
-    echo '{"metrics_summary.csv":{"Estimated Number of Spots Under Tissue":"3500","Mean Reads per Spot":"60000"}}' > spaceranger/collected_metrics.json
     """
 }

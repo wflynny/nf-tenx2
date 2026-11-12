@@ -18,6 +18,8 @@ include { MD5SUM as MD5SUM_MULTI                  } from "../modules/hash"
 include { MD5SUM as MD5SUM_INPUTS                 } from "../modules/hash"
 include { MD5SUM as MD5SUM_INPUTS_MULTI           } from "../modules/hash"
 include { MD5SUM as MD5SUM_AGGR                   } from "../modules/hash"
+include { COLLECT_METRICS                         } from "../modules/collect_metrics"
+include { COLLECT_METRICS as COLLECT_METRICS_MULTI } from "../modules/collect_metrics"
 include { CAPTURE_WORKFLOW                        } from "../modules/metadata"
 include { GENERATE_METADATA                       } from "../modules/metadata"
 include { GENERATE_METADATA as GENERATE_METADATA_MULTI } from "../modules/metadata"
@@ -83,10 +85,11 @@ workflow GEX {
         count_csv  = JSON_TO_LIBRARIES_CSV(count_json)
         count_out  = CELLRANGER_COUNT(count_csv)
         count_output_hashes = MD5SUM(count_out.results)
+        count_metrics       = COLLECT_METRICS(count_out.results)
 
         count_meta_ch = count_output_hashes.hashes
             .join(count_input_hashes.hashes)
-            .join(count_out.metrics)
+            .join(count_metrics.metrics)
             .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA(count_meta_ch, wf_json.json)
 
@@ -95,10 +98,11 @@ workflow GEX {
         multi_csv  = JSON_TO_MULTI_CSV(multi_json)
         multi_out  = CELLRANGER_MULTI(multi_csv)
         multi_output_hashes = MD5SUM_MULTI(multi_out.results)
+        multi_metrics       = COLLECT_METRICS_MULTI(multi_out.results)
 
         multi_meta_ch = multi_output_hashes.hashes
             .join(multi_input_hashes.hashes)
-            .join(multi_out.metrics)
+            .join(multi_metrics.metrics)
             .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA_MULTI(multi_meta_ch, wf_json.json)
 

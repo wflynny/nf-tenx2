@@ -8,6 +8,7 @@ include { MULTIQC                             } from "../modules/multiqc"
 include { MD5SUM                              } from "../modules/hash"
 include { MD5SUM as MD5SUM_INPUTS             } from "../modules/hash"
 include { MD5SUM as MD5SUM_AGGR               } from "../modules/hash"
+include { COLLECT_METRICS                     } from "../modules/collect_metrics"
 include { CAPTURE_WORKFLOW                    } from "../modules/metadata"
 include { GENERATE_METADATA                   } from "../modules/metadata"
 include { RECORD_TO_JSON_FILE_TYPED as RECORD_TO_JSON_FILE } from "../modules/file_parsing_typed"
@@ -55,10 +56,11 @@ workflow VISIUM {
         tool_csv  = JSON_TO_LIBRARIES_CSV(tool_json)
         tool_out  = SPACERANGER_COUNT(tool_csv)
         output_hashes = MD5SUM(tool_out.results)
+        tool_metrics  = COLLECT_METRICS(tool_out.results)
 
         meta_ch = output_hashes.hashes
             .join(input_hashes.hashes)
-            .join(tool_out.metrics)
+            .join(tool_metrics.metrics)
             .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA(meta_ch, wf_json.json)
 

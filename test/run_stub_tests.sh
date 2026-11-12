@@ -33,7 +33,7 @@ run_test() {
     local input_json="$3"
     local work_dir="${SCRIPT_DIR}/work/${test_name}"
 
-    echo -e "\n${YELLOW}━━━ TEST: ${test_name} ━━━${NC}"
+    echo -e "\n${YELLOW}--- TEST: ${test_name} ---${NC}"
     echo "  Pipeline: ${pipeline}"
     echo "  Input:    ${input_json}"
 
@@ -64,12 +64,13 @@ run_test() {
     fi
 }
 
-# ── Test definitions ─────────────────────────────────────────────────────────
+# -- Test definitions ---------------------------------------------------------
 # Format: "test_name|pipeline|input_json"
 TESTS="
 atac_count|atac|${TEST_INPUT_DIR}/atac_count.json
 gex_count_ab|gex|${TEST_INPUT_DIR}/gex_count_ab.json
 gex_count_simple|gex|${TEST_INPUT_DIR}/gex_count_simple.json
+gex_count_topup|gex|${TEST_INPUT_DIR}/gex_count_topup.json
 gex_multi_flex|gex|${TEST_INPUT_DIR}/gex_multi_flex.json
 gex_multi_vdj|gex|${TEST_INPUT_DIR}/gex_multi_vdj.json
 multiome_count|multiome|${TEST_INPUT_DIR}/multiome_count.json
@@ -77,9 +78,10 @@ visium_count|visium|${TEST_INPUT_DIR}/visium_count.json
 xenium_relabel|xenium|${TEST_INPUT_DIR}/xenium_relabel.json
 xenium_resegment|xenium|${TEST_INPUT_DIR}/xenium_resegment.json
 gex_count_aggr|gex|${TEST_INPUT_DIR}/aggr
+gex_multi_flex_v2|gex|${TEST_INPUT_DIR}/gex_multi_flex_v2.json
 "
 
-# ── Run tests ────────────────────────────────────────────────────────────────
+# -- Run tests ----------------------------------------------------------------
 FILTER="${1:-}"
 
 while IFS='|' read -r test_name pipeline input_json; do
@@ -94,9 +96,9 @@ done <<EOF
 $(echo "$TESTS")
 EOF
 
-# ── Summary ──────────────────────────────────────────────────────────────────
-echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# -- Summary ------------------------------------------------------------------
+echo -e "\n----------------------------------------"
 echo -e "  ${GREEN}PASSED: ${PASSED}${NC}  ${RED}FAILED: ${FAILED}${NC}  SKIPPED: ${SKIPPED}"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "----------------------------------------"
 
 exit $FAILED

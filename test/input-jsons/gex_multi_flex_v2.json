@@ -1,0 +1,29 @@
+{
+    "gene-expression": {
+        "probe-set": "/ref/probe_sets/Chromium_Human_v1.0.1_GRCh38.csv",
+        "create-bam": "false"
+    },
+    "libraries": [
+        {
+            "fastq_id": "gex_sample1",
+            "fastqs": "test/stub-fastqs/gex_sample1",
+            "feature_types": "Gene Expression"
+        }
+    ],
+    "samples": [
+        {
+            "sample_id": "FlexS1",
+            "probe_barcode_ids": "BC001",
+            "description": "Control"
+        },
+        {
+            "sample_id": "FlexS2",
+            "probe_barcode_ids": "BC002",
+            "description": "Treated"
+        }
+    ],
+    "pipeline": {
+        "tool_version": "10.0.0",
+        "dataset_id": "TestGEX_Multi-FlexV2"
+    }
+}

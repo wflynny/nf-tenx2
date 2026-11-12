@@ -24,6 +24,9 @@ METADATA_SCHEMA_VERSION = "1.2.0"
 def parse_checksum_file(path):
     """Parse a standard md5sum/sha256sum output file into a list of dicts."""
     checksums = []
+    # Xenium has no input checksums and passes a placeholder path that does not exist.
+    if not Path(path).exists():
+        return checksums
     with open(path, "r") as fin:
         for line in fin:
             line = line.strip()

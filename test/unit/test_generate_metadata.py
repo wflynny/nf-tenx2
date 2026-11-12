@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "modules/metadata/r
 from generate_metadata import create_metadata
 
 
-def run(metrics):
+def run(metrics, input_checksums="out.md5"):
     d = Path(tempfile.mkdtemp())
     (d / "rec.json").write_text('{"pipeline": {"dataset_id": "D"}}')
     (d / "wf.json").write_text("{}")
@@ -22,7 +22,7 @@ def run(metrics):
     if metrics is not None:
         (d / "collected_metrics.json").write_text(json.dumps(metrics))
     create_metadata(Namespace(record=d / "rec.json", workflow=d / "wf.json", out=d / "meta.json",
-                              input_checksums=[d / "out.md5"], output_checksums=[d / "out.md5"],
+                              input_checksums=[d / input_checksums], output_checksums=[d / "out.md5"],
                               metrics=d / "collected_metrics.json"))
     return json.loads((d / "meta.json").read_text())
 
@@ -38,7 +38,15 @@ def test_missing_metrics_file_gives_empty_dict():
     assert run(None)["metrics"] == {}
 
 
+def test_missing_input_checksums_gives_empty_list():
+    """Xenium passes a placeholder input-checksums path that does not exist."""
+    meta = run(None, input_checksums="NO_INPUT_CHECKSUMS")
+    assert meta["input_checksums"] == []
+    assert meta["output_checksums"] == [{"filename": "cellranger/a", "checksum": "abc"}]
+
+
 if __name__ == "__main__":
-    for fn in (test_metrics_copied_as_dict, test_missing_metrics_file_gives_empty_dict):
+    for fn in (test_metrics_copied_as_dict, test_missing_metrics_file_gives_empty_dict,
+               test_missing_input_checksums_gives_empty_list):
         fn()
         print(f"  ✓ {fn.__name__}")

@@ -53,7 +53,9 @@ process GENERATE_METADATA {
     script:
     def jsonRecord = groovy.json.JsonOutput.toJson(record)
     """
-    echo '${jsonRecord}' > rec.json
+    cat <<- 'HEREDOC' > rec.json
+    ${jsonRecord}
+    HEREDOC
 
     generate_metadata.py \\
         --record rec.json \\

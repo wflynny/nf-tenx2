@@ -10,9 +10,7 @@ include { CELLRANGER_COUNT                        } from "../modules/cellranger_
 include { CELLRANGER_AGGR                         } from "../modules/cellranger_aggr"
 include { RESOLVE_FASTQS                          } from "../modules/resolve_fastqs"
 include { PUBLISH_FASTQS                          } from "../modules/publish_fastqs"
-include { FASTQC                                  } from "../modules/fastqc"
-include { MULTIQC_DATASET                         } from "../modules/multiqc"
-include { MULTIQC                                 } from "../modules/multiqc"
+include { FASTQ_QC                            } from "./fastq_qc"
 include { MD5SUM                                  } from "../modules/hash"
 include { MD5SUM as MD5SUM_MULTI                  } from "../modules/hash"
 include { MD5SUM as MD5SUM_INPUTS                 } from "../modules/hash"
@@ -57,13 +55,8 @@ workflow GEX {
         //    (decoupled from analysis; nothing downstream depends on it).
         PUBLISH_FASTQS(resolved.fastq, pubdir)
 
-        // ── Falco (FastQC) per file ─────────────────────────────────
-        fastq_ch = resolved.fastq.flatMap { rec, fqs ->
-            fqs.collect { fq -> tuple([dataset_id: rec.pipeline.dataset_id], fq) }
-        }
-        fastqc_out = FASTQC(fastq_ch)
-        MULTIQC_DATASET(fastqc_out.results.groupTuple())
-        MULTIQC(fastqc_out.results.map { _meta, qc_dir -> qc_dir }.collect())
+        // ── FASTQ QC: Falco per file, MultiQC per dataset and per run ──
+        qc = FASTQ_QC(resolved.fastq)
 
         // ── Hash inputs (parallel with tools) ───────────────────────
         input_hash_branched = resolved.fastq
@@ -128,9 +121,9 @@ workflow GEX {
         results          = all_results.map { rec, dir -> tuple(rec.raw, dir) }
         metadata         = GENERATE_METADATA.out.metadata.mix(GENERATE_METADATA_MULTI.out.metadata)
         input_checksums  = count_input_hashes.hashes.mix(multi_input_hashes.hashes).map { rec, md5 -> tuple(rec.raw, md5) }
-        fastqc           = fastqc_out.results
-        multiqc_dataset  = MULTIQC_DATASET.out.html.mix(MULTIQC_DATASET.out.data)
-        multiqc_run      = MULTIQC.out.html.mix(MULTIQC.out.data)
+        fastqc           = qc.fastqc
+        multiqc_dataset  = qc.multiqc_dataset
+        multiqc_run      = qc.multiqc_run
         aggr_results     = CELLRANGER_AGGR.out.results
         aggr_metrics     = COLLECT_METRICS_AGGR.out.metrics
         aggr_checksums   = MD5SUM_AGGR.out.hashes

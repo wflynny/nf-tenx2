@@ -16,7 +16,7 @@ process PUBLISH_FASTQS {
     label 'process_low'
 
     input:
-        tuple val(record), path(fastqs, stageAs: 'in/*')
+        tuple val(record), path(fastq_dir)
         val(pubdir)
 
     output:
@@ -28,9 +28,13 @@ process PUBLISH_FASTQS {
     def parallel  = Math.max(task.cpus * 2, 4)
     """
     mkdir -p '${dest}'
-    find -L in -maxdepth 1 -type f -print0 \\
-        | xargs -0 -P ${parallel} -I{} cp -L {} '${dest}/'
-    ls '${dest}' > manifest.txt
+    # Keep the fastq/<source dir>/ subfolders in the destination.
+    cd ${fastq_dir}
+    find -L . -mindepth 1 -type d -exec mkdir -p '${dest}/{}' \\;
+    find -L . -type f -name '*.fastq.gz' -print0 \\
+        | xargs -0 -P ${parallel} -I{} cp -L {} '${dest}/{}'
+    cd - > /dev/null
+    (cd '${dest}' && find . -name '*.fastq.gz' | sort) > manifest.txt
     """
 
     stub:

@@ -68,6 +68,6 @@ process GENERATE_METADATA {
 
     stub:
     """
-    echo '{"metadata_schema_version":"1.2.0","record":{},"workflow":{}}' > pipeline-metadata.json
+    echo '{"metadata_schema_version":"1.3.0","record":{},"workflow":{}}' > pipeline-metadata.json
     """
 }

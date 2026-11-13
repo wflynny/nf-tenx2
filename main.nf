@@ -7,7 +7,6 @@ include { ATAC       } from "./workflows/atac"
 include { MULTIOME   } from "./workflows/multiome"
 include { VISIUM     } from "./workflows/visium"
 include { XENIUM     } from "./workflows/xenium"
-include { INITIALIZE } from "./workflows/initialize"
 
 params {
     // Folder of input JSONs, one per dataset. Only <folder>/*.json is read, not subfolders.
@@ -23,7 +22,17 @@ workflow {
         def pipeline = params.pipeline
         def pubdir   = workflow.outputDir.toString()
 
-        INITIALIZE(version, pipeline, params.inputDir, pubdir)
+        log.info """
+        ==========================================
+          nf-tenx2 v${version}
+          10x Genomics Processing Pipeline
+        ==========================================
+        Pipeline  : ${pipeline}
+        Input dir : ${params.inputDir}
+        Output dir: ${pubdir}
+        Profile   : ${workflow.profile}
+        ------------------------------------------
+        """.stripIndent()
 
         def json_files = files("${params.inputDir}/*.json")
         if (json_files.size() == 0) {

@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Stub test runner for nf-tenx2
+# Test runner for nf-tenx2
 #
-# Runs each pipeline entry point with -stub to validate:
-#   - Channel wiring and branching logic
-#   - Process input/output signatures
-#   - File naming conventions
+# Runs each pipeline with -stub to check channel wiring, branching and output
+# file names. Then two real checks: RESOLVE_FASTQS on decoy files, and -resume.
 #
-# Usage: bash test/run_stub_tests.sh [test_name]
-#   If test_name is provided, runs only that test.
-#   Otherwise runs all tests.
+# Usage: bash test/run_stub_tests.sh [name]   (substring match; default: all)
 # ==============================================================================
 set -euo pipefail
 
@@ -56,10 +52,10 @@ run_test() {
         --pubdir "${RESULTS_DIR}/${test_name}" \
         -ansi-log false \
         2>&1 | tee "${SCRIPT_DIR}/${test_name}.log"; then
-        echo -e "  ${GREEN}✓ PASSED${NC}"
+        echo -e "  ${GREEN}PASSED${NC}"
         PASSED=$((PASSED + 1))
     else
-        echo -e "  ${RED}✗ FAILED${NC} (see ${test_name}.log)"
+        echo -e "  ${RED}FAILED${NC} (see ${test_name}.log)"
         FAILED=$((FAILED + 1))
     fi
 }
@@ -96,9 +92,9 @@ done <<EOF
 $(echo "$TESTS")
 EOF
 
-# -- Real-run tests (no -stub) for scripts whose logic stubs skip ------------
+# -- RESOLVE_FASTQS real run (stubs skip its script) -------------------------
 if [ -z "$FILTER" ] || echo "resolve_fastqs" | grep -q "$FILTER"; then
-    echo -e "\n${YELLOW}━━━ TEST: resolve_fastqs (real run) ━━━${NC}"
+    echo -e "\n${YELLOW}--- TEST: resolve_fastqs (real run) ---${NC}"
     work_dir="${SCRIPT_DIR}/work/resolve_fastqs"
     rm -rf "${work_dir}" && mkdir -p "${work_dir}"
     if NXF_HOME="${work_dir}/.nxf_home" \
@@ -109,10 +105,42 @@ if [ -z "$FILTER" ] || echo "resolve_fastqs" | grep -q "$FILTER"; then
         -work-dir "${work_dir}" \
         -ansi-log false \
         2>&1 | tee "${SCRIPT_DIR}/resolve_fastqs.log"; then
-        echo -e "  ${GREEN}✓ PASSED${NC}"
+        echo -e "  ${GREEN}PASSED${NC}"
         PASSED=$((PASSED + 1))
     else
-        echo -e "  ${RED}✗ FAILED${NC} (see resolve_fastqs.log)"
+        echo -e "  ${RED}FAILED${NC} (see resolve_fastqs.log)"
+        FAILED=$((FAILED + 1))
+    fi
+else
+    SKIPPED=$((SKIPPED + 1))
+fi
+
+# -- Resume check --------------------------------------------------------------
+# Runs one fixture twice with -resume. The second run may only redo
+# CAPTURE_WORKFLOW and GENERATE_METADATA, which record the run's start time.
+if [ -z "$FILTER" ] || echo "resume" | grep -q "$FILTER"; then
+    echo -e "\n${YELLOW}--- TEST: resume ---${NC}"
+    work_dir="${SCRIPT_DIR}/work/resume"
+    rm -rf "${work_dir}" && mkdir -p "${work_dir}"
+    resume_run() {
+        (cd "${work_dir}" && NXF_HOME="${work_dir}/.nxf_home" \
+            nextflow run "${PROJECT_DIR}/main.nf" -profile testing -stub -resume \
+            --pipeline gex --inputJsonFiles "${TEST_INPUT_DIR}/gex_count_ab.json" \
+            --pubdir "${work_dir}/results" -ansi-log false)
+    }
+    if resume_run > "${SCRIPT_DIR}/resume.log" 2>&1 && resume_run >> "${SCRIPT_DIR}/resume.log" 2>&1; then
+        statuses=$(cd "${work_dir}" && NXF_HOME="${work_dir}/.nxf_home" nextflow log last -f process,status)
+        rerun=$(echo "$statuses" | grep -v 'CACHED$' | grep -vE ':(CAPTURE_WORKFLOW|GENERATE_METADATA)\b' || true)
+        if [ -z "$rerun" ] && echo "$statuses" | grep -q 'CACHED$'; then
+            echo -e "  ${GREEN}PASSED${NC} ($(echo "$statuses" | grep -c 'CACHED$') tasks cached)"
+            PASSED=$((PASSED + 1))
+        else
+            echo -e "  ${RED}FAILED${NC} -- tasks re-ran on -resume:"
+            echo "${rerun:-  (no cached tasks at all)}" | sed 's/^/    /'
+            FAILED=$((FAILED + 1))
+        fi
+    else
+        echo -e "  ${RED}FAILED${NC} (see resume.log)"
         FAILED=$((FAILED + 1))
     fi
 else

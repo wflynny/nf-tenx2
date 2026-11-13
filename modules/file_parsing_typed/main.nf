@@ -1,24 +1,14 @@
 /*
- * Typed (TenxNGSRecord) file-conversion processes for the NGS workflows.
- *
- * RECORD_TO_JSON_FILE_TYPED is used by all four NGS assays (GEX, ATAC,
- * Multiome, Visium); JSON_TO_MULTI_CSV is GEX-multi only. They live in their
- * own file because typed ports require `nextflow.enable.types` per-file and a
- * file cannot mix typed and legacy processes — and ../file_parsing still hosts
- * Map-based processes (JSON_TO_LIBRARIES_CSV etc.) shared with the legacy/raw
- * code paths.
- *
- * The record flows through as a typed TenxNGSRecord; serialization uses
- * recordToMap() so the on-disk JSON keeps its original hyphenated keys.
+ * File conversions that take a TenxNGSRecord. Separate from ../file_parsing
+ * because a file with typed processes can't also hold untyped ones.
  */
 
 nextflow.enable.types = true
 
-include { recordToMap; TenxNGSRecord } from "../types"
+include { TenxNGSRecord } from "../types"
 
 /*
- * Serialize a typed TenxNGSRecord to JSON, preserving the original hyphenated-key
- * shape via recordToMap(). The record is passed through untouched.
+ * Write the record's original JSON (record.raw) to rec.json.
  */
 process RECORD_TO_JSON_FILE_TYPED {
     label 'process_single'
@@ -30,7 +20,7 @@ process RECORD_TO_JSON_FILE_TYPED {
         tuple(record, file("rec.json"))
 
     script:
-    def jsonString = groovy.json.JsonOutput.toJson(recordToMap(record))
+    def jsonString = groovy.json.JsonOutput.toJson(record.raw)
     """
     cat <<- 'HEREDOC' > rec.json
     ${jsonString}
@@ -38,7 +28,7 @@ process RECORD_TO_JSON_FILE_TYPED {
     """
 
     stub:
-    def jsonString = groovy.json.JsonOutput.toJson(recordToMap(record))
+    def jsonString = groovy.json.JsonOutput.toJson(record.raw)
     """
     cat <<- 'HEREDOC' > rec.json
     ${jsonString}

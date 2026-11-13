@@ -36,9 +36,13 @@ run_test() {
     rm -rf "${work_dir}" "${RESULTS_DIR}/${test_name}"
     mkdir -p "${work_dir}"
 
-    local input_flag="--inputJsonFiles"
+    # The pipeline reads <input-dir>/*.json, so give each test its own folder.
+    local input_dir="${work_dir}/input"
+    mkdir -p "${input_dir}"
     if [ -d "${input_json}" ]; then
-        input_flag="--inputDir"
+        cp "${input_json}"/*.json "${input_dir}/"
+    else
+        cp "${input_json}" "${input_dir}/"
     fi
 
     if NXF_HOME="${work_dir}/.nxf_home" \
@@ -48,7 +52,7 @@ run_test() {
         -stub \
         -work-dir "${work_dir}" \
         --pipeline "${pipeline}" \
-        ${input_flag} "${input_json}" \
+        --input-dir "${input_dir}" \
         --pubdir "${RESULTS_DIR}/${test_name}" \
         -ansi-log false \
         2>&1 | tee "${SCRIPT_DIR}/${test_name}.log"; then
@@ -115,17 +119,43 @@ else
     SKIPPED=$((SKIPPED + 1))
 fi
 
+# -- Duplicate dataset_id check -------------------------------------------------
+# Two JSONs with one dataset_id must stop the run before any task starts.
+if [ -z "$FILTER" ] || echo "duplicate_ids" | grep -q "$FILTER"; then
+    echo -e "\n${YELLOW}--- TEST: duplicate_ids (expect failure) ---${NC}"
+    work_dir="${SCRIPT_DIR}/work/duplicate_ids"
+    rm -rf "${work_dir}" && mkdir -p "${work_dir}/input"
+    cp "${TEST_INPUT_DIR}/gex_count_simple.json" "${work_dir}/input/a.json"
+    cp "${TEST_INPUT_DIR}/gex_count_simple.json" "${work_dir}/input/b.json"
+    if (cd "${work_dir}" && NXF_HOME="${work_dir}/.nxf_home" \
+        nextflow run "${PROJECT_DIR}/main.nf" -profile testing -stub \
+        --pipeline gex --input-dir "${work_dir}/input" \
+        --pubdir "${work_dir}/results" -ansi-log false) > "${SCRIPT_DIR}/duplicate_ids.log" 2>&1; then
+        echo -e "  ${RED}FAILED${NC} -- run succeeded with duplicate dataset_ids"
+        FAILED=$((FAILED + 1))
+    elif grep -q "appear in more than one input JSON" "${SCRIPT_DIR}/duplicate_ids.log"; then
+        echo -e "  ${GREEN}PASSED${NC}"
+        PASSED=$((PASSED + 1))
+    else
+        echo -e "  ${RED}FAILED${NC} -- run failed for another reason (see duplicate_ids.log)"
+        FAILED=$((FAILED + 1))
+    fi
+else
+    SKIPPED=$((SKIPPED + 1))
+fi
+
 # -- Resume check --------------------------------------------------------------
 # Runs one fixture twice with -resume. The second run may only redo
 # CAPTURE_WORKFLOW and GENERATE_METADATA, which record the run's start time.
 if [ -z "$FILTER" ] || echo "resume" | grep -q "$FILTER"; then
     echo -e "\n${YELLOW}--- TEST: resume ---${NC}"
     work_dir="${SCRIPT_DIR}/work/resume"
-    rm -rf "${work_dir}" && mkdir -p "${work_dir}"
+    rm -rf "${work_dir}" && mkdir -p "${work_dir}/input"
+    cp "${TEST_INPUT_DIR}/gex_count_ab.json" "${work_dir}/input/"
     resume_run() {
         (cd "${work_dir}" && NXF_HOME="${work_dir}/.nxf_home" \
             nextflow run "${PROJECT_DIR}/main.nf" -profile testing -stub -resume \
-            --pipeline gex --inputJsonFiles "${TEST_INPUT_DIR}/gex_count_ab.json" \
+            --pipeline gex --input-dir "${work_dir}/input" \
             --pubdir "${work_dir}/results" -ansi-log false)
     }
     if resume_run > "${SCRIPT_DIR}/resume.log" 2>&1 && resume_run >> "${SCRIPT_DIR}/resume.log" 2>&1; then

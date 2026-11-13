@@ -36,7 +36,7 @@ with an additional `pipeline` block:
 }
 ```
 
-For `cellranger multi` workflows, include a `samples` section — this is the branching
+For `cellranger multi` workflows, include a `samples` section - this is the branching
 trigger. See `examples/` and `test/input-jsons/` for all supported configurations.
 
 ### Creating input JSONs from existing CSVs
@@ -47,19 +47,17 @@ bin/create_input.py -i existing_multi.csv -o new_input.json --tool-version 9.0.1
 
 ## Invocation
 
+Put one JSON file per dataset in a folder and pass that folder with `--input-dir`.
+The pipeline reads every `*.json` directly inside it; subfolders are ignored.
+
 ```bash
-# Single file
-nextflow run nf-tenx2 --pipeline gex --input-json-files sample1.json
+nextflow run nf-tenx2 --pipeline gex --input-dir path/to/jsons/
 
-# Multiple files
-nextflow run nf-tenx2 --pipeline gex --input-json-files "sample1.json sample2.json"
-
-# Directory of JSONs
-nextflow run nf-tenx2 --pipeline gex --input-dir path/to/json/files/
-
-# With HPC profile
+# On the HPC
 nextflow run nf-tenx2 -profile elion2 --pipeline gex --input-dir /path/to/jsons/
 ```
+
+Each JSON needs a unique `pipeline.dataset_id`; the run stops before starting if two share one.
 
 ## Testing
 
@@ -85,34 +83,34 @@ bash test/run_stub_tests.sh gex_count
 ## Architecture
 
 ```
-main.nf                          # Entry point — routes to workflow by --pipeline
-├── workflows/
-│   ├── gex.nf                   # GEX: branches multi/count, runs FASTQC/MultiQC
-│   ├── atac.nf                  # ATAC: cellranger-atac count
-│   ├── multiome.nf              # Multiome: cellranger-arc count
-│   ├── visium.nf                # Visium: spaceranger count
-│   └── xenium.nf                # Xenium: resegment/relabel branching
-├── modules/
-│   ├── cellranger_count/        # cellranger count (env module)
-│   ├── cellranger_multi/        # cellranger multi (env module)
-│   ├── cellranger-atac_count/   # cellranger-atac count (env module)
-│   ├── cellranger-arc_count/    # cellranger-arc count (env module)
-│   ├── spaceranger_count/       # spaceranger count (env module)
-│   ├── xeniumranger_resegment/  # xeniumranger resegment (env module)
-│   ├── xeniumranger_relabel/    # xeniumranger relabel (env module)
-│   ├── fastqc/                  # FastQC (singularity container)
-│   ├── multiqc/                 # MultiQC (singularity container)
-│   ├── hash/                    # MD5/SHA256 checksums
-│   ├── metadata/                # Pipeline metadata JSON
-│   ├── file_parsing/            # JSON ↔ CSV conversion
-│   └── utils.nf                 # Helper functions
-├── bin/
-│   ├── cellranger_csv.py        # CSV↔JSON converter (on PATH in processes)
-│   └── create_input.py          # Input file generator
-└── config/
-    ├── elion2.config            # Elion2 HPC profile
-    ├── sumner2.config           # Sumner2 HPC profile
-    └── test.config              # Local stub-test profile
+main.nf                          # Entry point - routes to workflow by --pipeline
+|-- workflows/
+|   |-- gex.nf                   # GEX: branches multi/count, runs FASTQC/MultiQC
+|   |-- atac.nf                  # ATAC: cellranger-atac count
+|   |-- multiome.nf              # Multiome: cellranger-arc count
+|   |-- visium.nf                # Visium: spaceranger count
+|   `-- xenium.nf                # Xenium: resegment/relabel branching
+|-- modules/
+|   |-- cellranger_count/        # cellranger count (env module)
+|   |-- cellranger_multi/        # cellranger multi (env module)
+|   |-- cellranger-atac_count/   # cellranger-atac count (env module)
+|   |-- cellranger-arc_count/    # cellranger-arc count (env module)
+|   |-- spaceranger_count/       # spaceranger count (env module)
+|   |-- xeniumranger_resegment/  # xeniumranger resegment (env module)
+|   |-- xeniumranger_relabel/    # xeniumranger relabel (env module)
+|   |-- fastqc/                  # FastQC (singularity container)
+|   |-- multiqc/                 # MultiQC (singularity container)
+|   |-- hash/                    # MD5/SHA256 checksums
+|   |-- metadata/                # Pipeline metadata JSON
+|   |-- file_parsing/            # JSON <-> CSV conversion
+|   `-- utils.nf                 # Helper functions
+|-- bin/
+|   |-- cellranger_csv.py        # CSV<->JSON converter (on PATH in processes)
+|   `-- create_input.py          # Input file generator
+`-- config/
+    |-- elion2.config            # Elion2 HPC profile
+    |-- sumner2.config           # Sumner2 HPC profile
+    `-- test.config              # Local stub-test profile
 ```
 
 ## Tool Strategy

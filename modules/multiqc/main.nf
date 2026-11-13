@@ -14,7 +14,7 @@ process MULTIQC_DATASET {
     errorStrategy 'ignore'
 
     input:
-        tuple val(meta), path(qc_files, stageAs: 'multiqc_input/*')
+        tuple val(meta), path(qc_files, stageAs: 'multiqc_input/?/*')
 
     output:
         tuple val(meta), path("multiqc_report.html"),  emit: html, optional: true
@@ -47,7 +47,7 @@ process MULTIQC {
     errorStrategy 'ignore'
 
     input:
-        path(qc_files, stageAs: 'multiqc_input/*')
+        path(qc_files, stageAs: 'multiqc_input/?/*')
 
     output:
         path("multiqc_report.html"),  emit: html, optional: true

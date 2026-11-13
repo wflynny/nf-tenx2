@@ -3,9 +3,10 @@
  *
  * The record's libraries specify parent directories that may contain
  * FASTQs from multiple datasets. This process finds only the files
- * matching this record's sample prefixes and symlinks them to the
- * output directory. publishDir mode:'copy' follows the symlinks to
- * copy real data into the results tree.
+ * matching this record's sample prefixes and symlinks them into
+ * fastq/<source dir name>/ (the sequencing core's project folder, e.g.
+ * 20261109_GT26-FlynnB-338/). A top-up run adds a second folder
+ * (..._GT26-FlynnB-338-run2/) whose FASTQs share file names with the first.
  *
  * Runs on a compute node so filesystem access is guaranteed.
  * Takes only val(record) — reads directly from the filesystem paths
@@ -21,27 +22,42 @@ process RESOLVE_FASTQS {
         val(record)
 
     output:
-        tuple val(record), path("fastq/*.fastq.gz"), emit: fastq
+        tuple val(record), path("fastq"), emit: fastq
 
     script:
-    def dirs = record.libraries.collect { lib -> lib.fastqs }.unique()
+    def dirs = record.libraries.collect { lib -> new File(lib.fastqs.toString()).path }.unique()
     def prefixes = record.libraries.collect { lib -> lib.fastq_id ?: lib.sample }.unique()
-    def grep_args = prefixes.collect { p -> "-e '^${p}'" }.join(' ')
-    def dir_list = dirs.collect { d -> "'${d}'" }.join(' ')
-    """
-    mkdir -p fastq
-    find -L ${dir_list} -name '*.fastq.gz' | while read -r fq; do
+    // Anchor on the Illumina _S<n>_ token so prefix Lib1 does not match Lib10_S2_...
+    def grep_args = prefixes.collect { p -> "-e '^${p}_S[0-9][0-9]*_'" }.join(' ')
+    def links = dirs.collect { d ->
+        def sub = "fastq/${new File(d).name}"
+        """
+    mkdir -p '${sub}'
+    find -L '${d}' -name '*.fastq.gz' | while read -r fq; do
         fname=\$(basename "\$fq")
         if echo "\$fname" | grep -q ${grep_args}; then
-            ln -s "\$(readlink -f "\$fq")" "fastq/\$fname"
+            ln -s "\$(readlink -f "\$fq")" "${sub}/\$fname"
         fi
-    done
+    done"""
+    }.join('\n')
+    """
+    mkdir -p fastq
+    ${links}
+
+    if [ -z "\$(find fastq -name '*.fastq.gz' -print -quit)" ]; then
+        echo "ERROR: no FASTQs matching ${prefixes.join(', ')} under ${dirs.join(', ')}" >&2
+        exit 1
+    fi
     """
 
     stub:
-    def prefixes = record.libraries.collect { lib -> lib.fastq_id ?: lib.sample }.unique()
+    def cmds = record.libraries.collect { lib ->
+        def p = lib.fastq_id ?: lib.sample
+        def sub = "fastq/${new File(lib.fastqs.toString()).name}"
+        "mkdir -p '${sub}' && touch '${sub}/${p}_S1_L001_R1_001.fastq.gz' '${sub}/${p}_S1_L001_R2_001.fastq.gz'"
+    }.join('\n    ')
     """
     mkdir -p fastq
-    ${prefixes.collect { p -> "touch fastq/${p}_S1_L001_R1_001.fastq.gz\n    touch fastq/${p}_S1_L001_R2_001.fastq.gz" }.join('\n    ')}
+    ${cmds}
     """
 }

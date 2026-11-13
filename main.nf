@@ -78,11 +78,12 @@ output {
     metadata {
         path { rec, _meta -> rec.pipeline.dataset_id }
     }
-    // Per-dataset FASTQ input checksums
+    // Per-dataset FASTQ input checksums. Entries are fastq/..., so the file
+    // sits at the dataset root (md5sum -c from <dataset_id>/).
     input_checksums {
-        path { rec, _md5 -> "${rec.pipeline.dataset_id}/fastq" }
+        path { rec, _md5 -> rec.pipeline.dataset_id }
     }
-    // Per-dataset FastQC results (one dir per FASTQ)
+    // Per-dataset FastQC results (one <run>_<file>_fastqc dir per FASTQ)
     fastqc {
         path { meta, _qc_dir -> "${meta.dataset_id}/fastq/qc" }
     }

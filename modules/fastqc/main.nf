@@ -5,8 +5,10 @@
  * It produces fastqc_data.txt, fastqc_report.html, and summary.txt
  * which are recognized by MultiQC's fastqc module.
  *
- * Output files are placed in a per-sample subdirectory named
- * ${base}_fastqc/ to avoid collisions and match MultiQC expectations.
+ * The FASTQ is linked as <run>_<file> before running Falco, where run is
+ * its source folder. Falco records that name, so MultiQC sample names stay
+ * unique when a top-up run repeats the first run's file names. Output goes
+ * to <run>_<file>_fastqc/.
  */
 process FASTQC {
     label 'process_single'
@@ -18,14 +20,16 @@ process FASTQC {
         tuple val(meta), path("${base}_fastqc"), emit: results
 
     script:
-    base = fastq.baseName.replaceAll('.fastq.gz$|.fq.gz$', '')
+    def name = "${meta.run}_${fastq.name}"
+    base = name.replaceAll(/\.f(ast)?q\.gz$/, '')
     """
+    ln -s ${fastq} '${name}'
     mkdir -p ${base}_fastqc
-    falco --quiet --outdir ${base}_fastqc ${fastq}
+    falco --quiet --outdir ${base}_fastqc '${name}'
     """
 
     stub:
-    base = fastq.baseName.replaceAll('.fastq.gz$|.fq.gz$', '')
+    base = "${meta.run}_${fastq.name}".replaceAll(/\.f(ast)?q\.gz$/, '')
     """
     mkdir -p ${base}_fastqc
     touch ${base}_fastqc/fastqc_data.txt

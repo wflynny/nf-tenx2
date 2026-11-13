@@ -8,6 +8,7 @@ test/results/
 test/*.log*
 test/*.json
 test/*/*.json
+!test/input-jsons/*.json
 inputs/
 results/
 
@@ -22,4 +23,6 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
-.pytest_cache/results/
+.pytest_cache/
+results/
+

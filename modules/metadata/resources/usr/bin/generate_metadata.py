@@ -18,7 +18,7 @@ import json
 import datetime
 from pathlib import Path
 
-METADATA_SCHEMA_VERSION = "1.2.0"
+METADATA_SCHEMA_VERSION = "1.3.0"
 
 
 def parse_checksum_file(path):

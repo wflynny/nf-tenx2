@@ -38,6 +38,14 @@ class RecordValidator {
             throw new IllegalArgumentException(
                 "Record '${record.pipeline?.dataset_id}' has empty 'libraries' section."
             )
+        // Each source dir is delivered as fastq/<dir name>; top-up runs add a second dir.
+        def dirs = record.libraries.findResults { lib -> lib.fastqs }.collect { d -> new File(d.toString()).path }.unique()
+        def names = dirs.collect { d -> new File(d).name }
+        if (names.unique(false).size() != names.size())
+            throw new IllegalArgumentException(
+                "Record '${record.pipeline?.dataset_id}' lists FASTQ dirs that share a folder name " +
+                "(${dirs.join(', ')}). Each dir is delivered as fastq/<folder name>, so the names must differ."
+            )
     }
 
     static void validateGex(Map record) {

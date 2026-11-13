@@ -7,32 +7,57 @@ include { ATAC       } from "./workflows/atac"
 include { MULTIOME   } from "./workflows/multiome"
 include { VISIUM     } from "./workflows/visium"
 include { XENIUM     } from "./workflows/xenium"
-include { INITIALIZE } from "./workflows/initialize"
-include { collect_input_json_files } from "./modules/utils"
+
+params {
+    // Folder of input JSONs, one per dataset. Only <folder>/*.json is read, not subfolders.
+    inputDir: Path
+    // gex | atac | multiome | visium | xenium
+    pipeline: String
+}
 
 workflow {
     main:
         // All params access is confined to this entry workflow
-        def version  = params.version
+        def version  = workflow.manifest.version
         def pipeline = params.pipeline
         def pubdir   = workflow.outputDir.toString()
 
-        INITIALIZE(version, pipeline, params.inputJsonFiles, params.inputDir, pubdir)
+        log.info """
+        ==========================================
+          nf-tenx2 v${version}
+          10x Genomics Processing Pipeline
+        ==========================================
+        Pipeline  : ${pipeline}
+        Input dir : ${params.inputDir}
+        Output dir: ${pubdir}
+        Profile   : ${workflow.profile}
+        ------------------------------------------
+        """.stripIndent()
 
-        // Use JsonSlurperClassic to get thread-safe HashMaps instead of
-        // LazyMap, which causes NPEs under concurrent Nextflow channel access.
-        records = channel
-            .fromList(collect_input_json_files(params.inputJsonFiles, params.inputDir))
-            .map { json_file ->
-                new groovy.json.JsonSlurperClassic().parseText(json_file.text)
+        def json_files = files("${params.inputDir}/*.json")
+        if (json_files.size() == 0) {
+            error "No *.json files directly inside --input-dir ${params.inputDir}"
+        }
+        // JsonSlurperClassic gives plain HashMaps; JsonSlurper's LazyMap throws NPEs
+        // under concurrent channel access.
+        def raws = json_files.collect { f ->
+            try {
+                return new groovy.json.JsonSlurperClassic().parseText(f.text)
+            } catch (Exception e) {
+                error "Could not read ${f.name} in --input-dir: ${e.message}"
             }
+        }
+        // Two records with the same dataset_id would publish into one folder.
+        def dupes = raws.countBy { r -> r.pipeline?.dataset_id }.findAll { id, n -> id != null && n > 1 }.keySet()
+        if (dupes.size() > 0) {
+            error "These dataset_ids appear in more than one input JSON: ${dupes.join(', ')}"
+        }
+        records = channel.fromList(raws)
 
         // Each per-assay workflow returns a uniform set of named channels.
         // Pipelines that don't produce a given output emit channel.empty().
         def out
-        if (pipeline == null) {
-            error "No pipeline supplied! Use --pipeline [gex|atac|multiome|visium|xenium]"
-        } else if (pipeline == 'gex') {
+        if (pipeline == 'gex') {
             GEX(records, version, pubdir)
             out = GEX.out
         } else if (pipeline == 'atac') {

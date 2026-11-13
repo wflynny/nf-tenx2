@@ -1,27 +1,6 @@
 /*
- * Utility functions for input collection and record manipulation.
+ * Helper functions shared by modules and workflows.
  */
-
-def collect_input_json_files(inputJsonFiles, inputDir) {
-    def result = []
-    if (inputJsonFiles) {
-        if (inputJsonFiles instanceof List) {
-            inputJsonFiles.each { f -> result.add(file(f)) }
-        } else {
-            result.add(file(inputJsonFiles))
-        }
-    }
-
-    if (inputDir) {
-        files("${inputDir}/**.json").each { f -> result.add(f) }
-    }
-
-    if (result.size() == 0) {
-        error "No input JSON files found. Supply --input-json-files or --input-dir"
-    }
-
-    return result.unique(false)
-}
 
 /**
  * Calculate --localmem value for 10x tools from task.memory.

@@ -15,16 +15,24 @@ process XENIUMRANGER_RESEGMENT {
     script:
     def localmem  = calc_localmem(task.memory)
     def datasetId = record.pipeline.dataset_id
-    def cmd       = CommandBuilder.xeniumrangerResegment(record, task.cpus, localmem)
+    def rec_json = groovy.json.JsonOutput.toJson(record)
     """
-    ${cmd}
+    run_10x.py --tool xeniumranger-resegment --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
 
     mkdir -p xenium-reseg
     mv ${datasetId}/outs/* xenium-reseg/
     """
 
     stub:
+    def localmem = calc_localmem(task.memory)
+    def rec_json = groovy.json.JsonOutput.toJson(record)
     """
+    run_10x.py --tool xeniumranger-resegment --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+
     mkdir -p xenium-reseg
     touch xenium-reseg/cells.zarr.zip
     touch xenium-reseg/cell_boundaries.parquet

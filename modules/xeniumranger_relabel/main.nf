@@ -15,16 +15,24 @@ process XENIUMRANGER_RELABEL {
     script:
     def localmem  = calc_localmem(task.memory)
     def datasetId = record.pipeline.dataset_id
-    def cmd       = CommandBuilder.xeniumrangerRelabel(record, task.cpus, localmem)
+    def rec_json = groovy.json.JsonOutput.toJson(record)
     """
-    ${cmd}
+    run_10x.py --tool xeniumranger-relabel --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
 
     mkdir -p xenium-relabel
     mv ${datasetId}/outs/* xenium-relabel/
     """
 
     stub:
+    def localmem = calc_localmem(task.memory)
+    def rec_json = groovy.json.JsonOutput.toJson(record)
     """
+    run_10x.py --tool xeniumranger-relabel --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+
     mkdir -p xenium-relabel
     touch xenium-relabel/gene_panel.json
     touch xenium-relabel/metrics_summary.csv

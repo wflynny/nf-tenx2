@@ -1,7 +1,6 @@
 # nf-tenx2
 
-A Nextflow pipeline for processing 10x Genomics single-cell and spatial data.
-One pipeline, multiple entry points for different assay types.
+A Nextflow pipeline for processing 10x Genomics single-cell and Visium data.
 
 ## Supported Assays
 
@@ -13,6 +12,14 @@ One pipeline, multiple entry points for different assay types.
 | `multiome`  | cellranger-arc   | Multiome (GEX + ATAC) |
 | `visium`    | spaceranger      | Visium FF, CytAssist, HD |
 | `xenium`    | xeniumranger     | Xenium resegment/relabel |
+
+## Requirements & Expectations for use
+
+The pipeline expects that you have the following local to your system:
+- SLURM job scheduler
+- `*ranger*` tools accessible as environment modules (`module load ...`)
+- Python 3.5 or greater available on head and compute nodes
+
 
 ## Input
 
@@ -72,13 +79,6 @@ Run a specific test:
 ```bash
 bash test/run_stub_tests.sh gex_count
 ```
-
-### What stub tests validate
-
-- Channel wiring: records flow to the correct branch (multi vs count)
-- Process signatures: input/output tuples match between connected processes
-- File naming: output globs resolve correctly
-- Branching logic: `samples` key routes to `cellranger multi`, absence routes to `count`
 
 ## Architecture
 

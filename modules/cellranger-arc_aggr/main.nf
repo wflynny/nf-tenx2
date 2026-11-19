@@ -22,12 +22,14 @@ process CELLRANGER_ARC_AGGR {
 
     script:
     def localmem = calc_localmem(task.memory)
-    def cmd      = CommandBuilder.cellrangerArcAggr(aggr_id, reference, task.cpus, localmem)
-    def csv_content = CommandBuilder.cellrangerArcAggrCsv(dataset_ids, atac_frags, pbm, gex_mol)
+    def rec_json = groovy.json.JsonOutput.toJson([pipeline: [dataset_id: aggr_id, tool_version: version], reference: reference])
+    def csv_content = (['library_id,atac_fragments,per_barcode_metrics,gex_molecule_info'] + [dataset_ids, atac_frags, pbm, gex_mol].transpose().collect { row -> row.join(',') }).join('\\n')
     """
     printf '${csv_content}\\n' > aggr.csv
 
-    ${cmd}
+    run_10x.py --tool cellranger-arc-aggr --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
 
     mkdir -p cellranger-arc-aggr/_files
     mv ${aggr_id}/_* cellranger-arc-aggr/_files/ || true
@@ -36,7 +38,13 @@ process CELLRANGER_ARC_AGGR {
     """
 
     stub:
+    def localmem = calc_localmem(task.memory)
+    def rec_json = groovy.json.JsonOutput.toJson([pipeline: [dataset_id: aggr_id, tool_version: version], reference: reference])
     """
+    run_10x.py --tool cellranger-arc-aggr --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+
     mkdir -p cellranger-arc-aggr/_files
     touch cellranger-arc-aggr/web_summary.html
     """

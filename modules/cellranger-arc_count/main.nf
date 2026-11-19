@@ -21,9 +21,11 @@ process CELLRANGER_ARC_COUNT {
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def cmd        = CommandBuilder.cellrangerArcCount(record.raw, task.cpus, localmem)
+    def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     """
-    ${cmd}
+    run_10x.py --tool cellranger-arc-count --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
 
     mkdir -p cellranger-arc/_files
     mv libraries.csv cellranger-arc/
@@ -33,8 +35,14 @@ process CELLRANGER_ARC_COUNT {
     """
 
     stub:
+    def localmem = calc_localmem(task.memory)
+    def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     def dataset_id = record.pipeline.dataset_id
     """
+    run_10x.py --tool cellranger-arc-count --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+
     mkdir -p cellranger-arc/_files
     mkdir -p cellranger-arc/filtered_feature_bc_matrix
 

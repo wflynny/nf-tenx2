@@ -21,9 +21,11 @@ process SPACERANGER_COUNT {
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def cmd        = CommandBuilder.spacerangerCount(record.raw, task.cpus, localmem)
+    def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     """
-    ${cmd}
+    run_10x.py --tool spaceranger-count --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
 
     mkdir -p spaceranger/_files
     mv ${dataset_id}/_* spaceranger/_files/ || true
@@ -32,8 +34,14 @@ process SPACERANGER_COUNT {
     """
 
     stub:
+    def localmem = calc_localmem(task.memory)
+    def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     def dataset_id = record.pipeline.dataset_id
     """
+    run_10x.py --tool spaceranger-count --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+
     mkdir -p spaceranger/_files
     mkdir -p spaceranger/spatial
     mkdir -p spaceranger/filtered_feature_bc_matrix

@@ -1,0 +1,82 @@
+Count reads from a single Single Cell ATAC library
+
+Usage: cellranger-atac count [OPTIONS] --id <ID> --reference <PATH> --fastqs <PATH>
+
+Options:
+      --id <ID>
+          A unique run id and output folder name [a-zA-Z0-9_-]+ of maximum
+          length 64 characters
+      --description <TEXT>
+          Sample description to embed in output files [default: ]
+      --reference <PATH>
+          Path to folder containing a Cell Ranger ATAC or Cell Ranger ARC
+          reference
+      --fastqs <PATH>
+          Path to input FASTQ data
+      --project <TEXT>
+          Name of the project folder within a mkfastq or bcl2fastq-generated
+          folder to pick FASTQs from
+      --sample <PREFIX>
+          Prefix of the filenames of FASTQs to select
+      --lanes <NUMS>
+          Only use FASTQs from selected lanes
+      --force-cells <NUM>
+          Define the top N barcodes with the most fragments overlapping peaks as
+          cells. N must be a positive integer >= 1. Please consult the
+          documentation before using this option
+      --peaks <BED>
+          Override peak caller: specify peaks to use in downstream analyses from
+          supplied 3-column BED file. The supplied peaks file must be sorted by
+          position and not contain overlapping peaks; comment lines beginning
+          with `#` are allowed
+      --dim-reduce <STR>
+          Dimensionality reduction mode for clustering [default: lsa] [possible
+          values: lsa, pca, plsa]
+      --subsample-rate <FRACTION>
+          Downsample to preserve this fraction of reads
+      --nosecondary
+          Disable secondary analysis, e.g. clustering
+      --dry
+          Do not execute the pipeline. Generate a pipeline invocation (.mro)
+          file and stop
+      --jobmode <MODE>
+          Job manager to use. Valid options: local (default), sge, lsf, slurm or
+          path to a .template file. Search for help on "Cluster Mode" at
+          support.10xgenomics.com for more details on configuring the pipeline
+          to use a compute cluster
+      --localcores <NUM>
+          Set max cores the pipeline may request at one time. Only applies to
+          local jobs
+      --localmem <NUM>
+          Set max GB the pipeline may request at one time. Only applies to local
+          jobs
+      --localvmem <NUM>
+          Set max virtual address space in GB for the pipeline. Only applies to
+          local jobs
+      --mempercore <NUM>
+          Reserve enough threads for each job to ensure enough memory will be
+          available, assuming each core on your cluster has at least this much
+          memory available. Only applies to cluster jobmodes
+      --maxjobs <NUM>
+          Set max jobs submitted to cluster at one time. Only applies to cluster
+          jobmodes
+      --jobinterval <NUM>
+          Set delay between submitting jobs to cluster, in ms. Only applies to
+          cluster jobmodes
+      --overrides <PATH>
+          The path to a JSON file that specifies stage-level overrides for cores
+          and memory. Finer-grained than --localcores, --mempercore and
+          --localmem. Consult https://10xgen.com/resource-override for an
+          example override file
+      --output-dir <PATH>
+          Output the results to this directory
+      --uiport <PORT>
+          Serve web UI at http://localhost:PORT
+      --disable-ui
+          Do not serve the web UI
+      --noexit
+          Keep web UI running after pipestance completes or fails
+      --nopreflight
+          Skip preflight checks
+  -h, --help
+          Print help

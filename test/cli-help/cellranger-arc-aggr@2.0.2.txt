@@ -1,0 +1,96 @@
+cellranger-arc-aggr 
+Aggregate data from multiple `cellranger-arc count` runs
+
+USAGE:
+    cellranger-arc aggr [FLAGS] [OPTIONS] --id <ID> --reference <PATH> --csv <CSV>
+
+FLAGS:
+        --nosecondary
+            Disable secondary analysis, e.g. clustering
+
+        --dry
+            Do not execute the pipeline. Generate a pipeline invocation (.mro) file and stop
+
+        --disable-ui
+            Do not serve the web UI
+
+        --noexit
+            Keep web UI running after pipestance completes or fails
+
+        --nopreflight
+            Skip preflight checks
+
+    -h, --help
+            Prints help information
+
+
+OPTIONS:
+        --id <ID>
+            A unique run id and output folder name [a-zA-Z0-9_-]+ of maximum length 64 characters
+
+        --description <TEXT>
+            Sample description to embed in output files [default: ]
+
+        --reference <PATH>
+            Path to folder containing cellranger-arc-compatible reference. Reference packages can be
+            downloaded from support.10xgenomics.com or constructed using the `cellranger-arc mkref`
+            command. Note: this reference must match the reference used for the initial `cellranger-
+            arc count` run
+
+        --csv <CSV>
+            Path to CSV file enumerating 'cellranger-arc count' outputs required for aggregation.
+            
+            For example, a CSV for aggregating two samples would look as follows (blank lines are
+            ignored):
+            
+            library_id,atac_fragments,per_barcode_metrics,gex_molecule_info
+            
+            L1,/data/L1/outs/atac_fragments.tsv.gz,/data/L1/outs/per_barcode_metrics.csv,/data/L1/outs/gex_molecule_info.h5
+            
+            L2,/data/L2/outs/atac_fragments.tsv.gz,/data/L2/outs/per_barcode_metrics.csv,/data/L2/outs/gex_molecule_info.h5
+            
+            Optionally, metadata associated with these libraries can be specified using additional
+            columns. This information is not used by the pipeline but will be available in the Loupe
+            file for visualization.
+
+        --peaks <BED>
+            Override peak caller: specify peaks to use in downstream analyses from supplied 3-column
+            BED file. The supplied peaks file must be sorted by position and not contain overlapping
+            peaks; comment lines beginning with `#` are allowed
+
+        --normalize <MODE>
+            Library depth normalization mode [default: depth] [possible values: none, depth]
+
+        --jobmode <MODE>
+            Job manager to use. Valid options: local (default), sge, lsf, slurm or path to a
+            .template file. Search for help on "Cluster Mode" at support.10xgenomics.com for more
+            details on configuring the pipeline to use a compute cluster [default: local]
+
+        --localcores <NUM>
+            Set max cores the pipeline may request at one time. Only applies to local jobs
+
+        --localmem <NUM>
+            Set max GB the pipeline may request at one time. Only applies to local jobs
+
+        --localvmem <NUM>
+            Set max virtual address space in GB for the pipeline. Only applies to local jobs
+
+        --mempercore <NUM>
+            Reserve enough threads for each job to ensure enough memory will be available, assuming
+            each core on your cluster has at least this much memory available. Only applies to
+            cluster jobmodes
+
+        --maxjobs <NUM>
+            Set max jobs submitted to cluster at one time. Only applies to cluster jobmodes
+
+        --jobinterval <NUM>
+            Set delay between submitting jobs to cluster, in ms. Only applies to cluster jobmodes
+
+        --overrides <PATH>
+            The path to a JSON file that specifies stage-level overrides for cores and memory.
+            Finer-grained than --localcores, --mempercore and --localmem. Consult
+            https://support.10xgenomics.com/ for an example override file
+
+        --uiport <PORT>
+            Serve web UI at http://localhost:PORT
+

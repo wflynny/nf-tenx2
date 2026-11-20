@@ -11,6 +11,7 @@
 #   profile:       Nextflow profile (default elion2)
 #   pipeline:      any of gex atac multiome visium (default: all found)
 # Output goes to test/e2e/work/ (inputs, work dirs, results, logs).
+# test/e2e/e2e.config shrinks the 10x jobs' resource requests.
 # ==============================================================================
 set -euo pipefail
 
@@ -31,11 +32,19 @@ if [ ${#pipelines[@]} -eq 0 ]; then
 fi
 
 failed=0
+ran=()
 for p in "${pipelines[@]}"; do
     echo "--- ${p}"
+    if [ ! -d "${OUT}/inputs/${p}" ]; then
+        echo "  no inputs for ${p}, skipped"
+        failed=1
+        continue
+    fi
+    ran+=("${p}")
     rm -rf "${OUT}/results/${p}"
     if ! (cd "${OUT}" && nextflow run "${PROJECT_DIR}/main.nf" \
             -profile "${PROFILE}" \
+            -c "${HERE}/e2e.config" \
             -work-dir "${OUT}/work-${p}" \
             --pipeline "${p}" \
             --input-dir "${OUT}/inputs/${p}" \
@@ -48,7 +57,8 @@ done
 
 # Check only the pipelines that ran.
 rm -rf "${OUT}/check" && mkdir -p "${OUT}/check"
-for p in "${pipelines[@]}"; do cp -r "${OUT}/inputs/${p}" "${OUT}/check/"; done
+[ ${#ran[@]} -gt 0 ] || exit 1
+for p in "${ran[@]}"; do cp -r "${OUT}/inputs/${p}" "${OUT}/check/"; done
 python3 "${HERE}/e2e.py" check --inputs "${OUT}/check" --results "${OUT}/results" || failed=1
 
 # Refresh --help snapshots for every tool version that had inputs.

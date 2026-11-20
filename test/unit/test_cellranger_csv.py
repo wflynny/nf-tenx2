@@ -151,6 +151,20 @@ def test_empty_samples_section_is_left_out():
     assert "[samples]" not in text and "[libraries]" in text
 
 
+def test_create_bam_becomes_no_bam_before_8():
+    """cellranger 7.x multi only knows no-bam; create-bam arrived in 8.0."""
+    for version, create_bam, expected in [("7.2.0", "false", "no-bam,true"), ("7.2.0", "true", "no-bam,false"),
+                                          ("8.0.0", "false", "create-bam,false")]:
+        rec = dict(SAMPLE_MULTI_JSON, pipeline={"dataset_id": "x", "tool_version": version})
+        rec["gene-expression"] = {"reference": "/ref/GRCh38", "create-bam": create_bam}
+        config = Config(input_json=write_tmp(rec, ".json"))
+        config.load_input()
+        csv_path = Path(tempfile.mktemp(suffix=".csv"))
+        config.dump_multi_csv(csv_path)
+        lines = csv_path.read_text().splitlines()
+        assert expected in lines and sum("bam," in l for l in lines) == 1, lines
+
+
 def test_json_to_libraries_csv_roundtrip():
     """JSON -> libraries.csv -> JSON should preserve libraries section."""
     json_path = write_tmp(SAMPLE_COUNT_JSON, ".json")

@@ -17,11 +17,27 @@ from pathlib import Path
 from io import StringIO
 from configparser import ConfigParser
 
+from run_10x import normalize, version_key
+
 
 INPUT_TF_TRANSLATION = {"True": True, "False": False, "true": True, "false": False}
 OUTPUT_TF_TRANSLATION = {True: "true", False: "false"}
 
 TABULAR_SECTIONS = {"libraries", "samples"}
+
+
+def _multi_gex_options(gex, tool_version):
+    """[gene-expression] options for multi.csv. Before cellranger 8.0 the BAM
+    option was `no-bam` (inverted); `create-bam` arrived in 8.0."""
+    if tool_version is None or version_key(tool_version) >= version_key("8.0.0"):
+        return gex
+    out = {}
+    for key, value in gex.items():
+        if key == "create-bam":
+            out["no-bam"] = "true" if normalize(value) == "false" else "false"
+        else:
+            out[key] = value
+    return out
 
 
 def _load_json(input_file):
@@ -109,6 +125,8 @@ class Config:
             if isinstance(options, list) and len(options) == 0:
                 continue  # e.g. samples: [] for singleplex multi
             content.append(f"[{section_name}]")
+            if section_name == "gene-expression":
+                options = _multi_gex_options(options, self.config.get("pipeline", {}).get("tool_version"))
             if isinstance(options, dict):
                 for option_name, option_value in options.items():
                     value = OUTPUT_TF_TRANSLATION.get(option_value, option_value)

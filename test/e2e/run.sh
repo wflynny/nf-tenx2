@@ -15,6 +15,9 @@
 # ==============================================================================
 set -euo pipefail
 
+module purge
+module load apptainer nextflow
+
 [ $# -ge 1 ] || { sed -n '9,13p' "$0" >&2; exit 1; }
 SOFTWARE_ROOT="$1"
 PROFILE="${2:-elion2}"

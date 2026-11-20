@@ -34,9 +34,11 @@ process CELLRANGER_AGGR {
     printf '${csv_content}\\n' > aggr.csv
 
     # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
-    run_10x.py --tool cellranger-aggr --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
+    run_10x.py --tool cellranger-aggr --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
+    cat 10x_command.sh
+    bash 10x_command.sh
 
     mkdir -p cellranger-aggr/_files
     mv ${aggr_id}/_* cellranger-aggr/_files/ || true
@@ -49,9 +51,10 @@ process CELLRANGER_AGGR {
     def rec_json = groovy.json.JsonOutput.toJson([pipeline: [dataset_id: aggr_id, tool_version: version]])
     """
     # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
-    run_10x.py --tool cellranger-aggr --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    run_10x.py --tool cellranger-aggr --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
+    cat 10x_command.sh
 
     mkdir -p cellranger-aggr/_files
     mkdir -p cellranger-aggr/analysis

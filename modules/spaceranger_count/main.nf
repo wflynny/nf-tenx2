@@ -24,9 +24,11 @@ process SPACERANGER_COUNT {
     def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     """
     # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
-    run_10x.py --tool spaceranger-count --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
+    run_10x.py --tool spaceranger-count --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
+    cat 10x_command.sh
+    bash 10x_command.sh
 
     mkdir -p spaceranger/_files
     mv ${dataset_id}/_* spaceranger/_files/ || true
@@ -40,9 +42,10 @@ process SPACERANGER_COUNT {
     def dataset_id = record.pipeline.dataset_id
     """
     # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
-    run_10x.py --tool spaceranger-count --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    run_10x.py --tool spaceranger-count --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
+    cat 10x_command.sh
 
     mkdir -p spaceranger/_files
     mkdir -p spaceranger/spatial

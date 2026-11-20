@@ -18,9 +18,11 @@ process XENIUMRANGER_RELABEL {
     def rec_json = groovy.json.JsonOutput.toJson(record)
     """
     # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
-    run_10x.py --tool xeniumranger-relabel --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
+    run_10x.py --tool xeniumranger-relabel --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
+    cat 10x_command.sh
+    bash 10x_command.sh
 
     mkdir -p xenium-relabel
     mv ${datasetId}/outs/* xenium-relabel/
@@ -31,9 +33,10 @@ process XENIUMRANGER_RELABEL {
     def rec_json = groovy.json.JsonOutput.toJson(record)
     """
     # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
-    run_10x.py --tool xeniumranger-relabel --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    run_10x.py --tool xeniumranger-relabel --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
+    cat 10x_command.sh
 
     mkdir -p xenium-relabel
     touch xenium-relabel/gene_panel.json

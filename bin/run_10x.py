@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build and run a 10x Genomics command from a pipeline record.
+Print the 10x Genomics command for a pipeline record. It does not run it.
 
 The flags for each command live in tenx_cli.json next to this script. Each
 rule reads one value from the record with `from` (a dotted key such as
@@ -15,12 +15,10 @@ Besides the record, `from` can read task.cpus, task.mem, and
 derived.fastq_dirs / derived.samples (joined from the libraries list).
 
 Usage:
-    run_10x.py --tool cellranger-count --cpus 16 --mem 120 < rec.json
-    run_10x.py ... --dry-run     # print the command, do not run it
+    run_10x.py --tool cellranger-count --cpus 16 --mem 120 < rec.json > cmd.sh && bash cmd.sh
 """
 import argparse
 import json
-import os
 import shlex
 import sys
 from pathlib import Path
@@ -142,12 +140,11 @@ def build_command(tool, record, cpus, mem, rules=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build and run a 10x Genomics command from a record")
+    parser = argparse.ArgumentParser(description="Print the 10x Genomics command for a record")
     parser.add_argument("--tool", required=True, help="Command name in tenx_cli.json, e.g. cellranger-count")
     parser.add_argument("--cpus", required=True, type=int)
     parser.add_argument("--mem", required=True, type=int, help="Memory in GB for --localmem")
     parser.add_argument("--record", default="-", help="Record JSON file (default: stdin)")
-    parser.add_argument("--dry-run", action="store_true", help="Print the command without running it")
     args = parser.parse_args()
 
     with (sys.stdin if args.record == "-" else open(args.record)) as fin:
@@ -158,9 +155,7 @@ def main():
         print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Running: {shlex.join(argv)}", flush=True)
-    if not args.dry_run:
-        os.execvp(argv[0], argv)
+    print(shlex.join(argv))
 
 
 if __name__ == "__main__":

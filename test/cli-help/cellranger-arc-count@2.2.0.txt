@@ -1,0 +1,149 @@
+Count ATAC and gene expression reads from a single library
+
+Usage: cellranger-arc count [OPTIONS] --id <ID> --reference <PATH> --libraries <CSV> --create-bam <true|false>
+
+Options:
+      --id <ID>
+          A unique run id and output folder name [a-zA-Z0-9_-]+ of maximum
+          length 64 characters
+
+      --description <TEXT>
+          Sample description to embed in output files
+
+      --reference <PATH>
+          Path to folder containing cellranger-arc-compatible reference.
+          Reference packages can be downloaded from support.10xgenomics.com or
+          constructed using the `cellranger-arc mkref` command
+
+      --libraries <CSV>
+          Path to 3-column CSV file defining the paths to ATAC and gene
+          expression FASTQ data generated with the Chromium Single Cell Multiome
+          ATAC + Gene Expression solution. A template CSV would look as follows
+          (blank lines are ignored):
+          
+          fastqs,sample,library_type
+          
+          /data/HAWT7ADXX/outs/fastq_path,myATAC,Chromatin Accessibility
+          
+          /data/H35KCBCXY/outs/fastq_path,myGEX,Gene Expression
+
+      --min-atac-count <NUM>
+          Cell caller override: define the minimum number of ATAC transposition
+          events in peaks (ATAC counts) for a cell barcode. Note: this option
+          must be specified in conjunction with `min-gex-count`. With
+          `--min-atac-count=X` and `--min-gex-count=Y` a barcode is defined as a
+          cell if it contains at least X ATAC counts AND at least Y GEX UMI
+          counts
+
+      --min-gex-count <NUM>
+          Cell caller override: define the minimum number of GEX UMI counts for
+          a cell barcode. Note: this option must be specified in conjunction
+          with `min-atac-count`. With `--min-atac-count=X` and
+          `--min-gex-count=Y` a barcode is defined as a cell if it contains at
+          least X ATAC counts AND at least Y GEX UMI counts
+
+      --peaks <BED>
+          Override peak caller: specify peaks to use in downstream analyses from
+          supplied 3-column BED file. The supplied peaks file must be sorted by
+          position and not contain overlapping peaks; comment lines beginning
+          with `#` are allowed
+
+      --gex-exclude-introns
+          Disable counting of intronic reads. In this mode, only reads that are
+          exonic and compatible with annotated splice junctions in the reference
+          are counted. Note: using this mode will reduce the UMI counts in the
+          feature-barcode matrix
+
+      --tenx-cloud-token-path <PATH>
+          The path to the 10x Cloud Analysis user token used to enable cell
+          annotation. If not provided, will default to the location stored
+          through cellranger-arc cloud auth setup
+
+      --cell-annotation-model <MODEL>
+          Cell annotation model to use. Valid model names can be viewed by
+          running `cellranger-arc cloud annotation models` or on the 10x
+          Genomics Support site. If this option is omitted or set to "auto",
+          uses the default model for the species. If a cloud token is not
+          available or the --disable-cell-annotation flag is used, cloud cell
+          annotation will not be performed. For local models, no
+          cell-annotation-model is necessary
+
+      --disable-cell-annotation
+          Disable cell type annotation
+
+      --create-bam <true|false>
+          Enable or disable BAM file generation. Setting --create-bam=false
+          reduces the total computation time and the size of the output
+          directory (BAM file not generated). We recommend setting
+          --create-bam=true if unsure. See https://10xgen.com/create-bam for
+          additional guidance
+          
+          [possible values: true, false]
+
+      --nosecondary
+          Disable secondary analysis, e.g. clustering
+
+      --rna-r1-length <NUM>
+          Trim the input Read 1 for GEX data to this length before analysis
+
+      --rna-r2-length <NUM>
+          Trim the input Read 2 for GEX data to this length before analysis
+
+      --dry
+          Do not execute the pipeline. Generate a pipeline invocation (.mro)
+          file and stop
+
+      --jobmode <MODE>
+          Job manager to use. Valid options: local (default), sge, lsf, slurm or
+          path to a .template file. Search for help on "Cluster Mode" at
+          support.10xgenomics.com for more details on configuring the pipeline
+          to use a compute cluster
+
+      --localcores <NUM>
+          Set max cores the pipeline may request at one time. Only applies to
+          local jobs
+
+      --localmem <NUM>
+          Set max GB the pipeline may request at one time. Only applies to local
+          jobs
+
+      --localvmem <NUM>
+          Set max virtual address space in GB for the pipeline. Only applies to
+          local jobs
+
+      --mempercore <NUM>
+          Reserve enough threads for each job to ensure enough memory will be
+          available, assuming each core on your cluster has at least this much
+          memory available. Only applies to cluster jobmodes
+
+      --maxjobs <NUM>
+          Set max jobs submitted to cluster at one time. Only applies to cluster
+          jobmodes
+
+      --jobinterval <NUM>
+          Set delay between submitting jobs to cluster, in ms. Only applies to
+          cluster jobmodes
+
+      --overrides <PATH>
+          The path to a JSON file that specifies stage-level overrides for cores
+          and memory. Finer-grained than --localcores, --mempercore and
+          --localmem. Consult https://10xgen.com/resource-override for an
+          example override file
+
+      --output-dir <PATH>
+          Output the results to this directory
+
+      --uiport <PORT>
+          Serve web UI at http://localhost:PORT
+
+      --disable-ui
+          Do not serve the web UI
+
+      --noexit
+          Keep web UI running after pipestance completes or fails
+
+      --nopreflight
+          Skip preflight checks
+
+  -h, --help
+          Print help (see a summary with '-h')

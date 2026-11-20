@@ -19,12 +19,17 @@ process SPACERANGER_AGGR {
 
     script:
     def localmem = calc_localmem(task.memory)
-    def cmd      = CommandBuilder.spacerangerAggr(aggr_id, task.cpus, localmem)
-    def csv_content = CommandBuilder.spacerangerAggrCsv(dataset_ids, mol_h5s)
+    def rec_json = groovy.json.JsonOutput.toJson([pipeline: [dataset_id: aggr_id, tool_version: version]])
+    def csv_content = (['sample_id,molecule_h5'] + [dataset_ids, mol_h5s].transpose().collect { row -> row.join(',') }).join('\\n')
     """
     printf '${csv_content}\\n' > aggr.csv
 
-    ${cmd}
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
+    run_10x.py --tool spaceranger-aggr --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+    cat 10x_command.sh
+    bash 10x_command.sh
 
     mkdir -p spaceranger-aggr/_files
     mv ${aggr_id}/_* spaceranger-aggr/_files/ || true
@@ -33,7 +38,15 @@ process SPACERANGER_AGGR {
     """
 
     stub:
+    def localmem = calc_localmem(task.memory)
+    def rec_json = groovy.json.JsonOutput.toJson([pipeline: [dataset_id: aggr_id, tool_version: version]])
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
+    run_10x.py --tool spaceranger-aggr --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+    cat 10x_command.sh
+
     mkdir -p spaceranger-aggr/_files
     touch spaceranger-aggr/web_summary.html
     """

@@ -1,0 +1,141 @@
+{
+  "cellranger-count": {
+    "note": "Minimum supported version: cellranger 7.0.0.",
+    "command": ["cellranger", "count"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--transcriptome", "kind": "value", "from": "gene-expression.reference", "required": true},
+      {"flag": "--libraries", "kind": "value", "default": "libraries.csv"},
+      {"flag": "--create-bam", "kind": "value", "from": "gene-expression.create-bam", "default": "false", "since": "8.0.0", "note": "Required from cellranger 8.0; replaced --no-bam."},
+      {"flag": "--no-bam", "kind": "switch", "from": "gene-expression.create-bam", "default": "false", "emit_when": "false", "until": "8.0.0", "note": "Before 8.0, BAM is written unless --no-bam is given."},
+      {"flag": "--include-introns", "kind": "value", "from": "gene-expression.include-introns", "default": "true", "since": "7.0.0", "note": "Added in cellranger 7.0."},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "cellranger-multi": {
+    "note": "Minimum supported version: cellranger 7.0.0.",
+    "command": ["cellranger", "multi"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--csv", "kind": "value", "default": "multi.csv"},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "cellranger-arc-count": {
+    "note": "Minimum supported version: cellranger-arc 2.0.1.",
+    "command": ["cellranger-arc", "count"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--reference", "kind": "value", "from": "multiome.reference", "required": true},
+      {"flag": "--libraries", "kind": "value", "default": "libraries.csv"},
+      {"flag": "--create-bam", "kind": "value", "from": "multiome.create-bam", "default": "true", "since": "2.1.0", "note": "Required from cellranger-arc 2.1.0; 2.0.x always writes BAM."},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "cellranger-atac-count": {
+    "note": "Minimum supported version: cellranger-atac 2.1.0.",
+    "command": ["cellranger-atac", "count"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--reference", "kind": "value", "from": "atac.reference", "required": true},
+      {"flag": "--fastqs", "kind": "value", "from": "derived.fastq_dirs", "required": true, "note": "Unique libraries[].fastqs, comma-joined; this tool takes no libraries CSV."},
+      {"flag": "--sample", "kind": "value", "from": "derived.samples", "required": true, "note": "Unique libraries[].fastq_id (or sample), comma-joined."},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "spaceranger-count": {
+    "note": "Minimum supported version: spaceranger 3.0.0.",
+    "command": ["spaceranger", "count"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--transcriptome", "kind": "value", "from": "gene-expression.reference", "required": true},
+      {"flag": "--fastqs", "kind": "value", "from": "derived.fastq_dirs", "required": true, "note": "Unique libraries[].fastqs, comma-joined; this tool takes no libraries CSV."},
+      {"flag": "--sample", "kind": "value", "from": "derived.samples", "required": true, "note": "Unique libraries[].fastq_id (or sample), comma-joined."},
+      {"flag": "--create-bam", "kind": "value", "from": "gene-expression.create-bam", "default": "true", "since": "3.0.0", "note": "Required from spaceranger 3.0."},
+      {"flag": "--probe-set", "kind": "value", "from": "gene-expression.probe-set", "default": null, "note": "FFPE / Visium HD; from 4.0 HD 3' auto-detects and records should omit it."},
+      {"flag": "--slide", "kind": "value", "from": "spatial.slide", "default": null},
+      {"flag": "--area", "kind": "value", "from": "spatial.area", "default": null},
+      {"flag": "--cytaimage", "kind": "value", "from": "spatial.cytaimage", "default": null, "note": "CytAssist image, spaceranger 2.0+."},
+      {"flag": "--darkimage", "kind": "value", "from": "spatial.darkimage", "default": null},
+      {"flag": "--image", "kind": "value", "from": "spatial.image", "default": null},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "cellranger-aggr": {
+    "note": "Minimum supported version: cellranger 7.0.0.",
+    "command": ["cellranger", "aggr"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--csv", "kind": "value", "default": "aggr.csv"},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "cellranger-atac-aggr": {
+    "note": "Minimum supported version: cellranger-atac 2.1.0.",
+    "command": ["cellranger-atac", "aggr"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--csv", "kind": "value", "default": "aggr.csv"},
+      {"flag": "--reference", "kind": "value", "from": "reference", "required": true},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "cellranger-arc-aggr": {
+    "note": "Minimum supported version: cellranger-arc 2.0.1.",
+    "command": ["cellranger-arc", "aggr"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--csv", "kind": "value", "default": "aggr.csv"},
+      {"flag": "--reference", "kind": "value", "from": "reference", "required": true},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "spaceranger-aggr": {
+    "note": "Minimum supported version: spaceranger 3.0.0.",
+    "command": ["spaceranger", "aggr"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--csv", "kind": "value", "default": "aggr.csv"},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true},
+      {"flag": "--disable-ui", "kind": "switch"}
+    ]
+  },
+  "xeniumranger-resegment": {
+    "note": "Minimum supported version: xeniumranger 3.0.0.",
+    "command": ["xeniumranger", "resegment"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--xenium-bundle", "kind": "value", "from": "xenium.input_path", "required": true},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true}
+    ]
+  },
+  "xeniumranger-relabel": {
+    "note": "Minimum supported version: xeniumranger 3.0.0.",
+    "command": ["xeniumranger", "relabel"],
+    "args": [
+      {"flag": "--id", "kind": "value", "from": "pipeline.dataset_id", "required": true},
+      {"flag": "--xenium-bundle", "kind": "value", "from": "xenium.input_path", "required": true},
+      {"flag": "--panel", "kind": "value", "from": "xenium.panel", "default": null},
+      {"flag": "--localcores", "kind": "value", "from": "task.cpus", "required": true},
+      {"flag": "--localmem", "kind": "value", "from": "task.mem", "required": true}
+    ]
+  }
+}

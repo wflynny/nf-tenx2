@@ -7,6 +7,7 @@ include { ATAC       } from "./workflows/atac"
 include { MULTIOME   } from "./workflows/multiome"
 include { VISIUM     } from "./workflows/visium"
 include { XENIUM     } from "./workflows/xenium"
+include { VALIDATE_RECORDS } from "./modules/validate_records"
 
 params {
     // Folder of input JSONs, one per dataset. Only <folder>/*.json is read, not subfolders.
@@ -47,12 +48,8 @@ workflow {
                 error "Could not read ${f.name} in --input-dir: ${e.message}"
             }
         }
-        // Two records with the same dataset_id would publish into one folder.
-        def dupes = raws.countBy { r -> r.pipeline?.dataset_id }.findAll { id, n -> id != null && n > 1 }.keySet()
-        if (dupes.size() > 0) {
-            error "These dataset_ids appear in more than one input JSON: ${dupes.join(', ')}"
-        }
-        records = channel.fromList(raws)
+        // Records are released only after every JSON passes the check.
+        records = VALIDATE_RECORDS(pipeline, json_files).flatMap { _ok -> raws }
 
         // Each per-assay workflow returns a uniform set of named channels.
         // Pipelines that don't produce a given output emit channel.empty().

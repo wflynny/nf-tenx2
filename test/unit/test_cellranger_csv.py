@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for bin/cellranger_csv.py — the JSON ↔ CSV converter.
+Unit tests for bin/cellranger_csv.py - the JSON <-> CSV converter.
 
 Run with: python3 -m pytest test/unit/test_cellranger_csv.py -v
 Or:       python3 test/unit/test_cellranger_csv.py
@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "bin"))
 from cellranger_csv import Config, _load_csv, _load_json
 
 
-# ── Test fixtures ────────────────────────────────────────────────────────────
+# -- Test fixtures
 
 SAMPLE_COUNT_JSON = {
     "gene-expression": {
@@ -79,7 +79,7 @@ SAMPLE_FLAT_CSV = """fastqs,sample,library_type
 """
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# -- Helpers
 
 def write_tmp(content, suffix):
     f = tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False)
@@ -88,7 +88,7 @@ def write_tmp(content, suffix):
     return Path(f.name)
 
 
-# ── Tests ────────────────────────────────────────────────────────────────────
+# -- Tests
 
 def test_load_flat_csv():
     """Flat CSV should parse into a dict with the section key."""
@@ -116,18 +116,18 @@ def test_load_sectioned_csv():
 
 
 def test_json_to_multi_csv_roundtrip():
-    """JSON → multi.csv → JSON should preserve data (minus pipeline block)."""
+    """JSON -> multi.csv -> JSON should preserve data (minus pipeline block)."""
     # Write JSON
     json_path = write_tmp(SAMPLE_MULTI_JSON, ".json")
     csv_path = Path(tempfile.mktemp(suffix=".csv"))
     rt_json_path = Path(tempfile.mktemp(suffix=".json"))
 
-    # JSON → multi CSV
+    # JSON -> multi CSV
     config = Config(input_json=json_path)
     config.load_input()
     config.dump_multi_csv(csv_path)
 
-    # multi CSV → JSON
+    # multi CSV -> JSON
     config2 = Config(input_csv=csv_path)
     config2.load_input()
     config2.dump_json(rt_json_path)
@@ -141,13 +141,37 @@ def test_json_to_multi_csv_roundtrip():
     assert roundtripped["samples"][1]["sample_id"] == "Donor2"
 
 
+def test_empty_samples_section_is_left_out():
+    """Singleplex multi records carry samples: []; an empty [samples] is not valid."""
+    config = Config(input_json=write_tmp(dict(SAMPLE_MULTI_JSON, samples=[]), ".json"))
+    config.load_input()
+    csv_path = Path(tempfile.mktemp(suffix=".csv"))
+    config.dump_multi_csv(csv_path)
+    text = csv_path.read_text()
+    assert "[samples]" not in text and "[libraries]" in text
+
+
+def test_create_bam_becomes_no_bam_before_8():
+    """cellranger 7.x multi only knows no-bam; create-bam arrived in 8.0."""
+    for version, create_bam, expected in [("7.2.0", "false", "no-bam,true"), ("7.2.0", "true", "no-bam,false"),
+                                          ("8.0.0", "false", "create-bam,false")]:
+        rec = dict(SAMPLE_MULTI_JSON, pipeline={"dataset_id": "x", "tool_version": version})
+        rec["gene-expression"] = {"reference": "/ref/GRCh38", "create-bam": create_bam}
+        config = Config(input_json=write_tmp(rec, ".json"))
+        config.load_input()
+        csv_path = Path(tempfile.mktemp(suffix=".csv"))
+        config.dump_multi_csv(csv_path)
+        lines = csv_path.read_text().splitlines()
+        assert expected in lines and sum("bam," in l for l in lines) == 1, lines
+
+
 def test_json_to_libraries_csv_roundtrip():
-    """JSON → libraries.csv → JSON should preserve libraries section."""
+    """JSON -> libraries.csv -> JSON should preserve libraries section."""
     json_path = write_tmp(SAMPLE_COUNT_JSON, ".json")
     csv_path = Path(tempfile.mktemp(suffix=".csv"))
     rt_json_path = Path(tempfile.mktemp(suffix=".json"))
 
-    # JSON → flat CSV
+    # JSON -> flat CSV
     config = Config(input_json=json_path)
     config.load_input()
     config.dump_unsectioned_csv(csv_path, "libraries")
@@ -183,17 +207,17 @@ def test_trailing_commas_handled():
     assert "" not in result["libraries"][0]
 
 
-# ── Run directly ─────────────────────────────────────────────────────────────
+# -- Run directly
 if __name__ == "__main__":
     tests = [v for k, v in globals().items() if k.startswith("test_")]
     passed = failed = 0
     for test_fn in tests:
         try:
             test_fn()
-            print(f"  ✓ {test_fn.__name__}")
+            print(f"  OK {test_fn.__name__}")
             passed += 1
         except Exception as e:
-            print(f"  ✗ {test_fn.__name__}: {e}")
+            print(f"  FAIL: {test_fn.__name__}: {e}")
             failed += 1
     print(f"\n{passed} passed, {failed} failed")
     sys.exit(1 if failed else 0)

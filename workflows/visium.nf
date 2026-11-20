@@ -22,30 +22,27 @@ workflow VISIUM {
         pubdir
 
     main:
-        // Validate on the raw map, then lift into a typed TenxNGSRecord that
-        // flows through the wiring (lowered back to raw.map at serialization
-        // and emit boundaries).
-        validated = records.map { raw ->
-            RecordValidator.validateVisium(raw)
-            recordFromMap(raw)
-        }
+        // Records were checked by VALIDATE_RECORDS in main.nf. Lift each into a
+        // typed TenxNGSRecord; it is lowered back to record.raw at serialization
+        // and emit boundaries.
+        validated = records.map { raw -> recordFromMap(raw) }
 
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
-        // ── Resolve FASTQs on compute node ──────────────────────────
+        // -- Resolve FASTQs on compute node
         resolved = RESOLVE_FASTQS(validated)
 
-        // ── Publish FASTQs to client-accessible dir on a compute node
+        // -- Publish FASTQs to client-accessible dir on a compute node
         //    (decoupled from analysis; nothing downstream depends on it).
         PUBLISH_FASTQS(resolved.fastq, pubdir)
 
-        // ── FASTQ QC: Falco per file, MultiQC per dataset and per run ──
+        // -- FASTQ QC: Falco per file, MultiQC per dataset and per run --
         qc = FASTQ_QC(resolved.fastq)
 
-        // ── Hash inputs (parallel with tool) ────────────────────────
+        // -- Hash inputs (parallel with tool)
         input_hashes = MD5SUM_INPUTS(resolved.fastq)
 
-        // ── Tool execution ──────────────────────────────────────────
+        // -- Tool execution
         tool_json = RECORD_TO_JSON_FILE(validated)
         tool_csv  = JSON_TO_LIBRARIES_CSV(tool_json)
         tool_out  = SPACERANGER_COUNT(tool_csv)
@@ -58,7 +55,7 @@ workflow VISIUM {
             .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA(meta_ch, wf_json.json)
 
-        // ── spaceranger aggr (optional) ─────────────────────────────
+        // -- spaceranger aggr (optional)
         aggr_ch = tool_out.results
             .filter { rec, _dir -> rec.pipeline.aggr_id != null }
             .map { rec, dir ->

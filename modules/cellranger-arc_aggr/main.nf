@@ -22,12 +22,17 @@ process CELLRANGER_ARC_AGGR {
 
     script:
     def localmem = calc_localmem(task.memory)
-    def cmd      = CommandBuilder.cellrangerArcAggr(aggr_id, reference, task.cpus, localmem)
-    def csv_content = CommandBuilder.cellrangerArcAggrCsv(dataset_ids, atac_frags, pbm, gex_mol)
+    def rec_json = groovy.json.JsonOutput.toJson([pipeline: [dataset_id: aggr_id, tool_version: version], reference: reference])
+    def csv_content = (['library_id,atac_fragments,per_barcode_metrics,gex_molecule_info'] + [dataset_ids, atac_frags, pbm, gex_mol].transpose().collect { row -> row.join(',') }).join('\\n')
     """
     printf '${csv_content}\\n' > aggr.csv
 
-    ${cmd}
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
+    run_10x.py --tool cellranger-arc-aggr --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+    cat 10x_command.sh
+    bash 10x_command.sh
 
     mkdir -p cellranger-arc-aggr/_files
     mv ${aggr_id}/_* cellranger-arc-aggr/_files/ || true
@@ -36,7 +41,15 @@ process CELLRANGER_ARC_AGGR {
     """
 
     stub:
+    def localmem = calc_localmem(task.memory)
+    def rec_json = groovy.json.JsonOutput.toJson([pipeline: [dataset_id: aggr_id, tool_version: version], reference: reference])
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
+    run_10x.py --tool cellranger-arc-aggr --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+    cat 10x_command.sh
+
     mkdir -p cellranger-arc-aggr/_files
     touch cellranger-arc-aggr/web_summary.html
     """

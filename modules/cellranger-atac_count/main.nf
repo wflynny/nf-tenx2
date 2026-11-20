@@ -21,9 +21,14 @@ process CELLRANGER_ATAC_COUNT {
     script:
     def localmem   = calc_localmem(task.memory)
     def dataset_id = record.pipeline.dataset_id
-    def cmd        = CommandBuilder.cellrangerAtacCount(record.raw, task.cpus, localmem)
+    def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     """
-    ${cmd}
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
+    run_10x.py --tool cellranger-atac-count --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+    cat 10x_command.sh
+    bash 10x_command.sh
 
     mkdir -p cellranger-atac/_files
     mv ${dataset_id}/_* cellranger-atac/_files/ || true
@@ -32,8 +37,16 @@ process CELLRANGER_ATAC_COUNT {
     """
 
     stub:
+    def localmem = calc_localmem(task.memory)
+    def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     def dataset_id = record.pipeline.dataset_id
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
+    run_10x.py --tool cellranger-atac-count --cpus ${task.cpus} --mem ${localmem} > 10x_command.sh <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+    cat 10x_command.sh
+
     mkdir -p cellranger-atac/_files
     mkdir -p cellranger-atac/filtered_peak_bc_matrix
     mkdir -p cellranger-atac/analysis

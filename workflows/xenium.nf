@@ -13,14 +13,9 @@ workflow XENIUM {
         pipeline_version
 
     main:
-        validated = records.map { rec ->
-            RecordValidator.validateXenium(rec)
-            rec
-        }
-
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
-        branched = validated
+        branched = records
             .branch { rec ->
                 resegment: rec.xenium?.action == 'resegment'
                 relabel:   rec.xenium?.action == 'relabel'
@@ -30,7 +25,7 @@ workflow XENIUM {
         reseg_out  = XENIUMRANGER_RESEGMENT(branched.resegment)
         reseg_hash = MD5SUM(reseg_out.results)
 
-        // No input checksums or metrics for xenium — pass empty placeholders
+        // No input checksums or metrics for xenium - pass empty placeholders
         reseg_meta_ch = reseg_hash.hashes
             .map { rec, output_checksums ->
                 tuple(rec, output_checksums, file("NO_INPUT_CHECKSUMS"), file("NO_METRICS"))

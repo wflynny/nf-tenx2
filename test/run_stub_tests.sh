@@ -146,7 +146,8 @@ fi
 
 # -- Resume check --------------------------------------------------------------
 # Runs one fixture twice with -resume. The second run may only redo
-# CAPTURE_WORKFLOW and GENERATE_METADATA, which record the run's start time.
+# CAPTURE_WORKFLOW and GENERATE_METADATA, which record the run's start time,
+# and VALIDATE_RECORDS, which is never cached.
 if [ -z "$FILTER" ] || echo "resume" | grep -q "$FILTER"; then
     echo -e "\n${YELLOW}--- TEST: resume ---${NC}"
     work_dir="${SCRIPT_DIR}/work/resume"
@@ -160,7 +161,7 @@ if [ -z "$FILTER" ] || echo "resume" | grep -q "$FILTER"; then
     }
     if resume_run > "${SCRIPT_DIR}/resume.log" 2>&1 && resume_run >> "${SCRIPT_DIR}/resume.log" 2>&1; then
         statuses=$(cd "${work_dir}" && NXF_HOME="${work_dir}/.nxf_home" nextflow log last -f process,status)
-        rerun=$(echo "$statuses" | grep -v 'CACHED$' | grep -vE ':(CAPTURE_WORKFLOW|GENERATE_METADATA)\b' || true)
+        rerun=$(echo "$statuses" | grep -v 'CACHED$' | grep -vE '(^|:)(CAPTURE_WORKFLOW|GENERATE_METADATA|VALIDATE_RECORDS)\b' || true)
         if [ -z "$rerun" ] && echo "$statuses" | grep -q 'CACHED$'; then
             echo -e "  ${GREEN}PASSED${NC} ($(echo "$statuses" | grep -c 'CACHED$') tasks cached)"
             PASSED=$((PASSED + 1))

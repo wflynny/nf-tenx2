@@ -24,6 +24,7 @@ process SPACERANGER_AGGR {
     """
     printf '${csv_content}\\n' > aggr.csv
 
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
     run_10x.py --tool spaceranger-aggr --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
@@ -38,6 +39,7 @@ process SPACERANGER_AGGR {
     def localmem = calc_localmem(task.memory)
     def rec_json = groovy.json.JsonOutput.toJson([pipeline: [dataset_id: aggr_id, tool_version: version]])
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
     run_10x.py --tool spaceranger-aggr --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
     ${rec_json}
     HEREDOC

@@ -23,6 +23,7 @@ process CELLRANGER_ARC_COUNT {
     def dataset_id = record.pipeline.dataset_id
     def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
     run_10x.py --tool cellranger-arc-count --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
@@ -39,6 +40,7 @@ process CELLRANGER_ARC_COUNT {
     def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     def dataset_id = record.pipeline.dataset_id
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
     run_10x.py --tool cellranger-arc-count --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
     ${rec_json}
     HEREDOC

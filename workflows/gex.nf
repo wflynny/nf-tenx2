@@ -1,5 +1,5 @@
 /*
- * GEX workflow — handles all 10x single-cell gene expression assays.
+ * GEX workflow - handles all 10x single-cell gene expression assays.
  *
  * Supports optional aggregation: records with a matching `pipeline.aggr_id`
  * are grouped and fed to cellranger aggr after individual count/multi completes.
@@ -37,28 +37,25 @@ workflow GEX {
         pubdir
 
     main:
-        // ── Validate (on the raw map) then lift into a typed record ──
-        //    Validation stays map-based (shared RecordValidator); the typed
-        //    TenxNGSRecord then flows through GEX wiring for typed field access.
-        validated = records.map { raw ->
-            RecordValidator.validateGex(raw)
-            recordFromMap(raw)
-        }
+        // Records were checked by VALIDATE_RECORDS in main.nf. Lift each into a
+        // typed TenxNGSRecord; it is lowered back to record.raw at serialization
+        // and emit boundaries.
+        validated = records.map { raw -> recordFromMap(raw) }
 
-        // ── Workflow provenance (once per run) ──────────────────────
+        // -- Workflow provenance (once per run)
         wf_json = CAPTURE_WORKFLOW(capture_workflow_json(pipeline_version))
 
-        // ── Resolve FASTQs on compute node ──────────────────────────
+        // -- Resolve FASTQs on compute node
         resolved = RESOLVE_FASTQS(validated)
 
-        // ── Publish FASTQs to client-accessible dir on a compute node
+        // -- Publish FASTQs to client-accessible dir on a compute node
         //    (decoupled from analysis; nothing downstream depends on it).
         PUBLISH_FASTQS(resolved.fastq, pubdir)
 
-        // ── FASTQ QC: Falco per file, MultiQC per dataset and per run ──
+        // -- FASTQ QC: Falco per file, MultiQC per dataset and per run --
         qc = FASTQ_QC(resolved.fastq)
 
-        // ── Hash inputs (parallel with tools) ───────────────────────
+        // -- Hash inputs (parallel with tools)
         input_hash_branched = resolved.fastq
             .branch { rec, _fqs ->
                 multi: rec.samples != null
@@ -67,14 +64,14 @@ workflow GEX {
         count_input_hashes = MD5SUM_INPUTS(input_hash_branched.count)
         multi_input_hashes = MD5SUM_INPUTS_MULTI(input_hash_branched.multi)
 
-        // ── Branch records for tool execution ───────────────────────
+        // -- Branch records for tool execution
         branched = validated
             .branch { rec ->
                 multi: rec.samples != null
                 count: true
             }
 
-        // ── cellranger count ────────────────────────────────────────
+        // -- cellranger count
         count_json = RECORD_TO_JSON_FILE(branched.count)
         count_csv  = JSON_TO_LIBRARIES_CSV(count_json)
         count_out  = CELLRANGER_COUNT(count_csv)
@@ -87,7 +84,7 @@ workflow GEX {
             .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA(count_meta_ch, wf_json.json)
 
-        // ── cellranger multi ────────────────────────────────────────
+        // -- cellranger multi
         multi_json = RECORD_TO_JSON_FILE_MULTI(branched.multi)
         multi_csv  = JSON_TO_MULTI_CSV(multi_json)
         multi_out  = CELLRANGER_MULTI(multi_csv)
@@ -100,7 +97,7 @@ workflow GEX {
             .map { rec, out_md5, in_md5, metrics -> tuple(rec.raw, out_md5, in_md5, metrics) }
         GENERATE_METADATA_MULTI(multi_meta_ch, wf_json.json)
 
-        // ── cellranger aggr (optional) ──────────────────────────────
+        // -- cellranger aggr (optional)
         all_results = count_out.results.mix(multi_out.results)
 
         aggr_ch = all_results

@@ -17,6 +17,7 @@ process XENIUMRANGER_RESEGMENT {
     def datasetId = record.pipeline.dataset_id
     def rec_json = groovy.json.JsonOutput.toJson(record)
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
     run_10x.py --tool xeniumranger-resegment --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
@@ -29,6 +30,7 @@ process XENIUMRANGER_RESEGMENT {
     def localmem = calc_localmem(task.memory)
     def rec_json = groovy.json.JsonOutput.toJson(record)
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
     run_10x.py --tool xeniumranger-resegment --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
     ${rec_json}
     HEREDOC

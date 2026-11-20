@@ -23,6 +23,7 @@ process CELLRANGER_MULTI {
     def dataset_id = record.pipeline.dataset_id
     def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
     run_10x.py --tool cellranger-multi --cpus ${task.cpus} --mem ${localmem} <<- 'HEREDOC'
     ${rec_json}
     HEREDOC
@@ -41,6 +42,7 @@ process CELLRANGER_MULTI {
     def sample_ids = record.samples != null ? record.samples.collect { s -> s.sample_id ?: 'sample1' } : ['sample1']
     def mkdir_cmds = sample_ids.collect { sid ->
         """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
     run_10x.py --tool cellranger-multi --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
     ${rec_json}
     HEREDOC

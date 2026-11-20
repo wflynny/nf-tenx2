@@ -83,9 +83,9 @@ Options:
 
       --reorient-images <true|false>
           Whether the pipeline should rotate and mirror the image to align the
-          “upright hourglass” fiducial pattern in the top left corner. Only set
+          "upright hourglass" fiducial pattern in the top left corner. Only set
           this to false if you are certain your image is already oriented with
-          the “upright hourglass” in the top left corner. [default: true]
+          the "upright hourglass" in the top left corner. [default: true]
           
           [possible values: true, false]
 

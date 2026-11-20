@@ -48,7 +48,7 @@ Options:
           Path of folder containing 10x-compatible reference
 
       --probe-set <CSV>
-          Path of probe set CSV. Must not be set for Visium HD 3’ Spatial Gene
+          Path of probe set CSV. Must not be set for Visium HD 3' Spatial Gene
           Expression
 
       --filter-probes <true|false>
@@ -153,7 +153,7 @@ Options:
           GeoJSON, or a CSV file. The TIFF, NPY, and GeoJSON coordinates must
           match the user's microscope image. Specifying this option disables the
           built-in cell segmentation method. If this option is set, you must
-          also provide a value for —nucleus-expansion-distance-micron. Set this
+          also provide a value for --nucleus-expansion-distance-micron. Set this
           to zero if providing a cell mask. See the online documentation for
           file format details
 

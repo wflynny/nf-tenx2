@@ -3,10 +3,10 @@
 Bidirectional converter between JSON records and cellranger CSV formats.
 
 Supports:
-  JSON → multi.csv      (sectioned CSV for cellranger multi)
-  JSON → libraries.csv  (flat CSV for cellranger count)
-  multi.csv → JSON
-  libraries.csv → JSON
+  JSON -> multi.csv      (sectioned CSV for cellranger multi)
+  JSON -> libraries.csv  (flat CSV for cellranger count)
+  multi.csv -> JSON
+  libraries.csv -> JSON
 
 Used as a Nextflow bin/ script (available on PATH within processes).
 """
@@ -46,7 +46,7 @@ def _load_csv(input_file, section_key="libraries"):
             rows.append(row)
         return {section_key: rows}
 
-    # Sectioned CSV — parse with ConfigParser
+    # Sectioned CSV - parse with ConfigParser
     cfg = ConfigParser(allow_no_value=True)
     cfg.optionxform = str  # preserve case
 
@@ -106,14 +106,14 @@ class Config:
             if section_name == "pipeline":
                 continue
 
+            if isinstance(options, list) and len(options) == 0:
+                continue  # e.g. samples: [] for singleplex multi
             content.append(f"[{section_name}]")
             if isinstance(options, dict):
                 for option_name, option_value in options.items():
                     value = OUTPUT_TF_TRANSLATION.get(option_value, option_value)
                     content.append(f"{option_name},{value}")
             elif isinstance(options, list):
-                if len(options) == 0:
-                    continue
                 headers = list(options[0].keys())
                 content.append(",".join(headers))
                 for row in options:

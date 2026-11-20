@@ -47,6 +47,14 @@ def test_multi_needs_reference_or_probe_set():
     assert any("probe-set" in p for p in check_record("gex", rec, RULES))
 
 
+def test_multi_8_needs_create_bam():
+    rec = load("gex_multi_vdj.json")
+    del rec["gene-expression"]["create-bam"]
+    assert any("create-bam" in p for p in check_record("gex", rec, RULES))
+    rec["pipeline"]["tool_version"] = "7.2.0"
+    assert check_record("gex", rec, RULES) == []
+
+
 def test_samples_null_is_checked_as_count():
     """The workflow sends samples: null to cellranger count, which needs a reference."""
     rec = load("gex_count_simple.json")

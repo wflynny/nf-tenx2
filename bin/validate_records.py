@@ -16,7 +16,7 @@ import os
 import sys
 from collections import Counter
 
-from run_10x import build_command, load_rules
+from run_10x import build_command, load_rules, version_key
 
 PIPELINES = ("gex", "atac", "multiome", "visium", "xenium")
 COUNT_TOOL = {
@@ -65,6 +65,9 @@ def check_record(pipeline, record, rules):
         gex = record.get("gene-expression") or {}
         if not gex.get("reference") and not gex.get("probe-set"):
             problems.append("cellranger multi needs 'gene-expression.reference' or 'gene-expression.probe-set'")
+        # multi.csv has no default for it from 8.0, unlike the count command line.
+        if version_key(pipe["tool_version"]) >= version_key("8.0.0") and gex.get("create-bam") is None:
+            problems.append("cellranger multi 8.0+ needs 'gene-expression.create-bam' (true or false)")
 
     try:
         build_command(tool_for(pipeline, record), record, 1, 1, rules)

@@ -39,14 +39,10 @@ process CELLRANGER_MULTI {
     def localmem = calc_localmem(task.memory)
     def rec_json = groovy.json.JsonOutput.toJson(record.raw)
     def dataset_id = record.pipeline.dataset_id
-    def sample_ids = record.samples != null ? record.samples.collect { s -> s.sample_id ?: 'sample1' } : ['sample1']
+    // Singleplex multi (samples: []) writes per_sample_outs/<dataset_id>.
+    def sample_ids = record.samples != null && record.samples.size() > 0 ? record.samples.collect { s -> s.sample_id ?: 'sample1' } : [dataset_id]
     def mkdir_cmds = sample_ids.collect { sid ->
         """
-    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
-    run_10x.py --tool cellranger-multi --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
-    ${rec_json}
-    HEREDOC
-
         mkdir -p cellranger-multi/per_sample_outs/${sid}
         echo 'Estimated Number of Cells,Mean Reads per Cell' > cellranger-multi/per_sample_outs/${sid}/metrics_summary.csv
         echo '3000,40000' >> cellranger-multi/per_sample_outs/${sid}/metrics_summary.csv
@@ -54,6 +50,11 @@ process CELLRANGER_MULTI {
         """
     }.join('\n')
     """
+    # tenx_cli.json md5: ${task.ext.tenx_rules_md5}
+    run_10x.py --tool cellranger-multi --cpus ${task.cpus} --mem ${localmem} --dry-run <<- 'HEREDOC'
+    ${rec_json}
+    HEREDOC
+
     mkdir -p cellranger-multi/_files
     mkdir -p cellranger-multi/multi/count/raw_feature_bc_matrix
     mkdir -p cellranger-multi/multi/count/filtered_feature_bc_matrix
